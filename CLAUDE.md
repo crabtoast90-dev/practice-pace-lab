@@ -12,7 +12,7 @@ The user (Brian) is a game designer, not a programmer: report in plain language,
 ## How it's built
 - **Sim first.** Rules live in the pure seeded sim: `src/core/sim.js` (shared engine), `src/core/bot.js` (the "decent player"), `src/core/cards.js` (SHARED card, skeleton and fight data). No three.js, DOM, `Math.random` or clock there. The view (`src/view/`) only plays the sim's events; player input enters as actions.
 - **All numbers** in one data file per mode: `src/<mode>/data.js` (A = `src/fast/`), which imports the shared cards so `?tune=cards.strike.dmg:7` works. Feel numbers (clips, hit-stop, shake, camera) live in `src/view/families.js`.
-- **`npm run sim`** rewrites `BALANCE.md` against the targets: bot wins the run 55-70%, fights last 4-7 turns. Quote the headline back. When asked for tuning, answer with three candidate sets that each hit every target; fix timing or structure before stats; check cooldown-like limits against fight length.
+- **Balance is low priority for this practice run (Brian, 2026-10-19):** the goal is testing the game flows of A, B and C. Don't tune numbers or block work on balance targets unless he asks. `npm run sim` still rewrites `BALANCE.md` (bot wins 55-70%, fights 4-7 turns) as information only; mention a big miss in one line, don't fix it. When he does ask for tuning: three candidate sets that each hit every target; timing or structure before stats; check cooldown-like limits against fight length.
 - Stack: three.js (pinned), Vite, plain JS. Hooks: `?test` (manual clock, `window.__game.advance(ms)`), `?seed=N`, `?mode=fast`, `?tune=path:value`, `?deck=id,id` (start deck), `?debug`; `__game.state() / stateText() / bot()`.
 
 ## Self-check
