@@ -3,6 +3,7 @@
 // the headline back. One section per mode; each lane edits only its own mode's section.
 import { writeFileSync } from 'node:fs';
 import { FAST } from '../src/fast/data.js';
+import { PLAN } from '../src/plan/data.js';
 import { createRun, act } from '../src/core/sim.js';
 import { botAction } from '../src/core/bot.js';
 import { digest } from '../src/core/rng.js';
@@ -90,6 +91,8 @@ function section(title, data, m) {
 }
 
 const A = section('A Fast', FAST, measure(FAST));
+// B plays the same rules as A (only the pace differs), so the bot's numbers match A's.
+const B = section('B Plan then Watch', PLAN, measure(PLAN));
 
 line('# Balance report');
 line();
@@ -98,10 +101,14 @@ line();
 line('## Headline');
 line();
 line(`- ${A.head}`);
-line('- B Plan then Watch: coming (not built yet).');
+line(`- ${B.head}`);
 line('- C Spirit Combo: coming (not built yet).');
 line();
+line('Balance is information only for this practice run (see CLAUDE.md).');
+line();
 for (const s of A.body) line(s);
+line();
+for (const s of B.body) line(s);
 
 writeFileSync('BALANCE.md', out.join('\n') + '\n');
 console.log(out.join('\n'));

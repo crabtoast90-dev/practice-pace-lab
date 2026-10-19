@@ -18,10 +18,9 @@
           <b>A · Fast</b>
           <span>3 energy, draw 5. Tap a card and it hits at once. 1x / 2x and Skip.</span>
         </button>
-        <button class="mode coming" data-mode="plan" disabled>
+        <button class="mode" data-mode="plan" disabled>
           <b>B · Plan then Watch</b>
           <span>Queue the whole turn with exact previews, press GO, watch it play out.</span>
-          <em>coming</em>
         </button>
         <button class="mode coming" data-mode="kaitos" disabled>
           <b>C · Spirit Combo</b>
@@ -32,7 +31,7 @@
       <p id="loading">Loading…</p>
     </div>
 
-    <div id="fast-hud" class="hud" hidden>
+    <div id="battle-hud" class="hud" hidden>
       <div id="plates"></div>
       <div id="numbers"></div>
       <div class="topbar">
@@ -42,6 +41,7 @@
       <div id="banner" class="banner" hidden></div>
       <div class="bottom">
         <div class="status"><span id="energy" class="orb"></span><span id="chain" hidden></span><span id="piles"></span></div>
+        <div id="queue" hidden></div>
         <div id="hand"></div>
         <div id="turn-note" hidden></div>
         <button id="end-turn">End turn</button>

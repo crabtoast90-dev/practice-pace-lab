@@ -8,6 +8,8 @@ import { createDebugOverlay } from './debug.js';
 import { applyTune, applyDeck } from './tune.js';
 import { FAST as FAST_DATA } from './fast/data.js';
 import { createFastView } from './view/fast-view.js';
+import { PLAN as PLAN_DATA } from './plan/data.js';
+import { createPlanView } from './view/plan-view.js';
 
 // Start screen picks a pace mode; each mode is one view over the same arena. Rules live
 // in the sim (src/core/sim.js + each mode's data file); this file only shows what they hold.
@@ -15,9 +17,9 @@ const params = new URLSearchParams(location.search);
 const TEST = params.has('test'); // ?test: the clock only moves when the check calls advance()
 const seed = Number(params.get('seed') ?? 1); // ?seed=N picks the run
 const tuned = (d) => applyDeck(applyTune(d, params.get('tune')), params.get('deck')); // ?tune=rules.energy:4  ?deck=strike,verdict
-const DATA = { fast: tuned(FAST_DATA) };
-const VIEWS = { fast: createFastView };
-const MODES = Object.keys(VIEWS); // B (plan) and C (kaitos) show as "coming"
+const DATA = { fast: tuned(FAST_DATA), plan: tuned(PLAN_DATA) };
+const VIEWS = { fast: createFastView, plan: createPlanView };
+const MODES = Object.keys(VIEWS); // C (kaitos) shows as "coming"
 const $ = (id) => document.getElementById(id);
 
 const canvas = $('game');

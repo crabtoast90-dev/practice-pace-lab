@@ -22,7 +22,7 @@ export function createFastView({ data, seed, figures, stage, rig, vfx, camera, c
   ring.position.y = 0.03;
   stage.group.add(ring);
 
-  $('fast-hud').hidden = false;
+  $('battle-hud').hidden = false;
   $('reward').hidden = true;
   $('run-end').hidden = true;
 
@@ -171,7 +171,7 @@ export function createFastView({ data, seed, figures, stage, rig, vfx, camera, c
       $('reward-cards').removeEventListener('click', onReward);
       canvas.removeEventListener('pointerdown', onCanvas);
       removeEventListener('keydown', onKey);
-      $('fast-hud').hidden = true;
+      $('battle-hud').hidden = true;
     },
   };
 }

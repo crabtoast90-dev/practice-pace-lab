@@ -27,8 +27,9 @@ export function createBattlePlayer({ data, pace, figures, stage, rig, vfx, camer
   let banner = null;
   let beatsPlayed = 0;
   let foes = [];
+  let preview = null; // mode B: what the plates will read after the planned turn
   const shown = { hero: { hp: data.hero.hp, block: 0, str: 0 }, enemies: [] };
-  const info = { turnKey: null, fight: -1, chain: 0, lastCard: null, cinematic: false, lastEvent: null, impacts: 0, combos: 0, finishers: 0 };
+  const info = { turnKey: null, fight: -1, chain: 0, lastCard: null, cinematic: false, lastEvent: null, impacts: 0, combos: 0, finishers: 0, cuts: 0 };
 
   // ---- small helpers on the game clock ----
   const after = (ms, fn) => timers.push({ ms, fn });
@@ -114,24 +115,30 @@ export function createBattlePlayer({ data, pace, figures, stage, rig, vfx, camer
     if (m.str || m.strAll) parts.push(`<span class="ib buf">BUFF${m.strAll ? ' ALL' : ''}</span>`);
     return parts.join('');
   }
-  function placePlate(el, fig, hp, max) {
+  // pv: the HP this figure will have after the planned turn (mode B), or undefined.
+  function placePlate(el, fig, hp, max, pv) {
     const p = fig.group.position.clone().add(V(0, fig.height + 0.25, 0)).project(camera);
     const w = ui.plates.clientWidth;
     const h = ui.plates.clientHeight;
     el.style.transform = `translate(${((p.x + 1) / 2) * w}px, ${((1 - p.y) / 2) * h}px) translate(-50%, -100%)`;
-    el.querySelector('.bar i').style.width = `${(100 * hp) / max}%`;
-    setHtml(el, '.hpt', `${hp}/${max}`);
+    const bar = el.querySelector('.bar i');
+    const showPv = pv !== undefined && pv !== hp;
+    bar.style.width = `${(100 * (showPv ? pv : hp)) / max}%`;
+    el.querySelector('.bar').style.setProperty('--was', `${(100 * hp) / max}%`);
+    el.classList.toggle('preview', showPv);
+    setHtml(el, '.hpt', showPv ? `${hp} <span class="arrow">→</span> <b class="pv">${pv}</b>` : `${hp}/${max}`);
   }
   function placeAll() {
-    placePlate(heroPlate, hero, shown.hero.hp, data.hero.hp);
-    setHtml(heroPlate, '.tags', tags(shown.hero));
+    placePlate(heroPlate, hero, shown.hero.hp, data.hero.hp, preview?.hero.hp);
+    setHtml(heroPlate, '.tags', tags(preview ? { ...shown.hero, block: preview.hero.block, str: preview.hero.str } : shown.hero));
     foes.forEach((f, i) => {
       const s = shown.enemies[i];
       if (!s) return;
-      placePlate(f.plate, f.fig, s.hp, f.maxHp);
+      placePlate(f.plate, f.fig, s.hp, f.maxHp, preview?.enemies[i]?.hp);
       f.plate.classList.toggle('dead', !s.alive);
+      f.plate.classList.toggle('doomed', !!preview && s.alive && !preview.enemies[i]?.alive);
       setHtml(f.plate, '.intent', s.alive ? intentHtml(s.intent) : '');
-      setHtml(f.plate, '.tags', tags(s));
+      setHtml(f.plate, '.tags', tags(preview?.enemies[i] ? { ...s, block: preview.enemies[i].block, exposed: preview.enemies[i].exposed } : s));
     });
     for (const l of labels) {
       const k = l.t / l.ms;
@@ -230,7 +237,7 @@ export function createBattlePlayer({ data, pace, figures, stage, rig, vfx, camer
   function cardBeat(ev) {
     const card = data.cards[ev.id];
     const fam = FAMILIES[card.family];
-    const M = card.look.ms;
+    const M = card.look.ms * (card.family === 'finisher' ? 1 : pace.cardMs ?? 1);
     const hitAt = M * fam.hitFrac;
     const dest = strikeTargets(ev, card, fam);
     const groups = [];
@@ -243,6 +250,7 @@ export function createBattlePlayer({ data, pace, figures, stage, rig, vfx, camer
     cue(0, () => {
       info.chain = ev.chain;
       info.lastCard = ev.id;
+      if (pace.director && !big) directorCut(ev, card);
       hero.play(fam.clip, (fam.clipHit * 1000) / hitAt);
       glow(hero, card.look.color, big ? 0.06 : 0.04, big ? M * fam.releaseAt : 140);
       if (card.block && card.dmg) selfEffect(ev, card); // Shield Bash: shield up as it charges
@@ -279,7 +287,20 @@ export function createBattlePlayer({ data, pace, figures, stage, rig, vfx, camer
       const back = Math.min(180, M * 0.25);
       cue(Math.max(lastHit + 60, M - back), () => tween(hero, hero.home, back));
     }
-    return { cues, dur: Math.max(M, lastHit + 80) };
+    return { cues, dur: Math.max(M, lastHit + 80) + (pace.cardGapMs ?? 0) };
+  }
+
+  // Mode B: a hard cut to this card family's shot (stage.shots), held through the card.
+  function directorCut(ev, card) {
+    if (skipping) return;
+    const shot = stage.shots[card.family];
+    if (!shot) return;
+    const struck = [...new Set(ev.hits.map((h) => h.target))].map(foeFig).filter(Boolean);
+    const target = foeFig(ev.target) ?? struck[0] ?? foeFig(0);
+    const centre = struck.length ? struck.reduce((s, f) => s.add(f.home), V()).multiplyScalar(1 / struck.length) : target?.home.clone() ?? V();
+    const point = (which) => (which === 'hero' ? hero.home.clone() : which === 'centre' ? centre.clone() : (target?.home ?? centre).clone());
+    rig.cut({ position: point(shot.anchor).add(shot.offset.clone().multiplyScalar(far())), target: point(shot.aim).add(shot.look), fov: shot.fov });
+    info.cuts++;
   }
 
   function enemyBeat(ev) {
@@ -288,6 +309,7 @@ export function createBattlePlayer({ data, pace, figures, stage, rig, vfx, camer
     const M = pace.enemyMs;
     const cues = [];
     const cue = (at, fn) => cues.push({ at, fn });
+    if (pace.director) cue(0, () => { if (rig.cutting && !info.cinematic) rig.release(); });
     const hitAt = M * ENEMY.hitFrac;
     if (m.atk) {
       const dest = V(hero.home.x + ENEMY.reach, 0, hero.home.z);
@@ -336,7 +358,7 @@ export function createBattlePlayer({ data, pace, figures, stage, rig, vfx, camer
     if (ev.type === 'turnStart') {
       return { dur: pace.turnGapMs, cues: [{ at: 0, fn: () => { applySnap(ev.snap); info.chain = 0; } }, { at: pace.turnGapMs, fn: () => { info.turnKey = `${info.fight}:${ev.turn}`; } }] };
     }
-    if (ev.type === 'fightWon') return { dur: pace.fightGapMs, cues: [{ at: 250, fn: () => showBanner('Fight won', '#9fe89f', 'title') }] };
+    if (ev.type === 'fightWon') return { dur: pace.fightGapMs, cues: [{ at: 0, fn: () => { if (pace.director && !info.cinematic) rig.release(); } }, { at: 250, fn: () => showBanner('Fight won', '#9fe89f', 'title') }] };
     if (ev.type === 'runEnd') {
       return { dur: 700, cues: [{ at: 0, fn: () => { if (ev.result === 'win') { hero.play('buff'); burst(['rise', 'ring'], hero.group.position, '#ffe27a'); } } }] };
     }
@@ -387,6 +409,7 @@ export function createBattlePlayer({ data, pace, figures, stage, rig, vfx, camer
     foeFigure: foeFig,
     foeCount: () => foes.length,
     push(events) { queue.push(...events); },
+    setPreview(p) { preview = p; },
     busy: () => !!beat || queue.length > 0,
     pending: () => queue.length + (beat ? 1 : 0),
     beatsPlayed: () => beatsPlayed,

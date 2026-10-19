@@ -88,6 +88,16 @@ function arenaStage() {
       impact: { offset: V(-0.4, 0.6, 4.4), look: V(-0.4, 1.1, 0), fov: 50 },
       portraitPull: 1.9, // phone: the cuts sit this many times further back
     },
+    // Mode B's directed turn: one cut per card family. anchor = where the camera sits
+    // (offset from the hero, the target, or the centre of the struck skeletons); aim = what it
+    // looks at (look is added to that point). Phones pull back by portraitPull.
+    shots: {
+      light: { anchor: 'hero', offset: V(-1.9, 1.5, 2.8), aim: 'target', look: V(0, 1.0, 0), fov: 46 },
+      heavy: { anchor: 'target', offset: V(0.3, 0.45, 3.6), aim: 'target', look: V(-1.0, 1.1, 0), fov: 48 },
+      area: { anchor: 'centre', offset: V(-0.8, 5.2, 7.6), aim: 'centre', look: V(0, 0.6, 0), fov: 46 },
+      buff: { anchor: 'hero', offset: V(2.3, 1.2, 3.1), aim: 'hero', look: V(0, 1.0, 0), fov: 44 },
+      block: { anchor: 'hero', offset: V(2.0, 0.9, 3.3), aim: 'hero', look: V(0.2, 1.0, 0), fov: 46 },
+    },
   };
 }
 

@@ -34,3 +34,10 @@ One dated line per decision. Lines marked *(my call)* are technical or naming ca
 - 2026-10-19: The reward sizes (+50% block, +1 for buffs) and Shield Bash counting as a block card (its block grows, not its damage). *(my call)*
 - 2026-10-19: The new rewards pushed the bot to 75% wins. Three candidate sets hit every target: (1) Bone Champion HP 92 → 104 (62%, fights 4.3 / 4.8 / 6.6), (2) Champion swings 7 → 8 and 10 → 12 (64%), (3) Knight HP 72 → 68 (65%). Shipped set 1; Brian can switch to 2 or 3. *(my call)*
 - 2026-10-19: Brian: balance is low priority for this practice run; the goal is testing the game flows of A, B and C. No tuning or balance gating unless he asks; `npm run sim` stays as information only.
+
+## 2026-10-19 (B1: Plan then Watch)
+- 2026-10-19: Brian: start B1.
+- 2026-10-19: How B's previews stay exact: queueing a card plays it in the sim at once and only its animation waits for GO; un-queueing rewinds the turn to its start and replays the rest of the queue. The previews are the sim's own result, never view maths. *(my call)*
+- 2026-10-19: B's previews: queued cards show their exact damage / block / strength / draws and "KO"; skeleton plates show HP now → after the turn, with a red "KO" outline on any that will die; the knight's plate shows his HP after the skeletons answer the plan (so even an empty plan shows the incoming damage). *(my call)*
+- 2026-10-19: Un-queue: tap any queued card to take it out. A draw card resolves when queued, so it and every card before it lock ("locked" tag). Backspace takes the last one out on laptop. *(my call)*
+- 2026-10-19: GO plays the queued cards as one sequence with a hard camera cut per card family (light: over the shoulder; heavy: low side shot at the target; area: high wide; buff and block: in front of the knight), each card 25% longer than in A with a 180 ms beat between cards; the camera returns to the arena for the skeletons. B has Skip but no 2x. B's turn rules are the same as A's. *(my call)*
