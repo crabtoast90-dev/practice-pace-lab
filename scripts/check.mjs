@@ -23,7 +23,7 @@ const URL_ARG = process.argv.find((a) => a.startsWith('--url='))?.slice(6);
 const ONLY = process.argv.find((a) => a.startsWith('--only='))?.slice(7);
 const SEED = 1;
 const LOSE_TUNE = 'hero.hp:14'; // a hero weak enough to fall, to check the Defeat path
-const FEEL_DECK = 'jab,jab,strike,verdict,guard'; // turn 1 = jab, jab, strike (combo), Final Verdict (finisher)
+const FEEL_DECK = 'jab,jab,strike,verdict,guard'; // turn 1 = jab, jab, strike (combo), Final Verdict (finisher), Guard (block combo)
 
 function chromePath() {
   if (process.env.CHROME_PATH) return process.env.CHROME_PATH;
@@ -222,6 +222,18 @@ async function feel(page, name, click) {
   const t0 = s.time;
   s = await waitFor(page, name, 'the finisher to end', (x) => !x.mode.cinematic && !x.mode.busy, 20);
   summaries.push(`[${name}] combo on card 3, finisher cinematic ${((s.time - t0) * 1000).toFixed(0)} ms after impact until the camera came back`);
+  // Block gets its own combo reward (Brian's pick): Guard as the 5th card blocks 5 + 50%.
+  const combosBefore = s.mode.combos;
+  await tapCard('guard');
+  s = await waitFor(page, name, 'the block combo', (x) => x.mode.combos > combosBefore, 10);
+  await advance(page, 60);
+  await shot(page, name, '3b-block-combo');
+  s = await waitFor(page, name, 'the block combo to end', (x) => !x.mode.busy, 20);
+  const wantBlock = Math.floor(data.cards.guard.block * (1 + data.rules.combo.bonus.block.blockPct / 100));
+  if (s.mode.simHp && (await page.evaluate(() => window.__game.state().mode)).played !== 5) failures.push(`[${name}] Guard was not played as the 5th card`);
+  const heroTags = await page.locator('.plate.hero .tags').textContent();
+  if (!heroTags.includes(`${wantBlock} block`)) failures.push(`[${name}] combo Guard should show ${wantBlock} block, plate says "${heroTags}"`);
+  else summaries.push(`[${name}] Guard as card 5 lands the combo: ${wantBlock} block`);
   await click('#speed');
   if ((await state(page)).mode.speed !== 2) failures.push(`[${name}] speed toggle did not switch to 2x`);
   await click('#end-turn');
@@ -236,7 +248,7 @@ async function feel(page, name, click) {
   await shot(page, name, '5-turn-2');
   // Node: the same taps on the same deck and seed.
   const node = createRun(data, SEED);
-  for (const id of ['jab', 'jab', 'strike', 'verdict']) act(data, node, { type: 'play', hand: node.fight.hand.findIndex((c) => c.id === id), target: 0 });
+  for (const id of ['jab', 'jab', 'strike', 'verdict', 'guard']) act(data, node, { type: 'play', hand: node.fight.hand.findIndex((c) => c.id === id), target: 0 });
   act(data, node, { type: 'end' });
   if (s.mode.digest !== digest(node.events)) failures.push(`[${name}] feel run differs from Node (browser ${s.mode.digest}, Node ${digest(node.events)})`);
   else summaries.push(`[${name}] feel run matches Node (${digest(node.events)}); 2x and Skip work`);

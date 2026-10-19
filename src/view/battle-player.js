@@ -212,8 +212,17 @@ export function createBattlePlayer({ data, pace, figures, stage, rig, vfx, camer
   function selfEffect(ev, card) {
     const color = card.look.color;
     const at = chest(hero);
-    if (ev.block) { burst(['bubble'], at, color); number(at, `+${ev.block} block`, 'blk'); }
-    if (ev.str) { burst(['rise'], hero.group.position, color); number(at, `+${ev.str} strength`, 'buf'); }
+    if (ev.combo && !ev.hits.length && !skipping) {
+      // Block and buffs land the combo too: banner, flash, a bigger burst and a punch-in.
+      info.combos++;
+      showBanner(`${ev.chain === data.rules.combo.at ? 'COMBO!' : `COMBO ×${ev.chain}`}`, color, 'combo');
+      burst(['ring', 'sparks'], hero.group.position.clone().add(V(0, 0.4, 0)), color, { big: true });
+      rig.punch(at, COMBO.punch);
+      screenFlash(COMBO.flash);
+      stop(COMBO.extraHitStopMs);
+    }
+    if (ev.block) { burst(['bubble'], at, color); number(at, `+${ev.block} block`, ev.combo ? 'blk combo' : 'blk'); }
+    if (ev.str) { burst(['rise'], hero.group.position, color); number(at, `+${ev.str} strength`, ev.combo ? 'buf combo' : 'buf'); }
     if (ev.drew?.length) { burst(['rise'], hero.group.position, color); number(at, `draw ${ev.drew.length}`, 'buf'); }
     glow(hero, color, 0.06, 200);
   }

@@ -28,3 +28,8 @@ One dated line per decision. Lines marked *(my call)* are technical or naming ca
 - 2026-10-19: Phone camera sits behind the knight's left shoulder (found by a search over camera angles so all four fighters fit between the top bar and the hand). *(my call)*
 - 2026-10-19: Test hook `?deck=` sets the starting deck, so the check reaches the combo and the finisher on turn 1. *(my call)*
 - 2026-10-19: No RESEARCH.md: the game borrows structures, not numbers, from Slay the Spire and Baten Kaitos. *(my call)*
+
+## 2026-10-19 (after the setup playtest)
+- 2026-10-19: Brian: "Combos only worked for attacks but not block." He picked option 2: each family gets its own combo reward from the 3rd card on. Attacks and finishers +25% damage (as before), block cards +50% block, buffs +1 (Battle Cry +3 strength, Focus draws 3). Block and buff cards now also get the combo banner, flash and camera punch-in.
+- 2026-10-19: The reward sizes (+50% block, +1 for buffs) and Shield Bash counting as a block card (its block grows, not its damage). *(my call)*
+- 2026-10-19: The new rewards pushed the bot to 75% wins. Three candidate sets hit every target: (1) Bone Champion HP 92 → 104 (62%, fights 4.3 / 4.8 / 6.6), (2) Champion swings 7 → 8 and 10 → 12 (64%), (3) Knight HP 72 → 68 (65%). Shipped set 1; Brian can switch to 2 or 3. *(my call)*

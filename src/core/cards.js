@@ -51,7 +51,7 @@ export const ENEMIES = {
   minion: { name: 'Bone Minion', model: 'minion', hp: 19, moves: [{ atk: 2 }, { atk: 2, hits: 2 }] },
   rogue: { name: 'Bone Stalker', model: 'rogue', hp: 41, moves: [{ atk: 2, hits: 3 }, { atk: 5 }, { block: 8, str: 2 }] },
   mage: { name: 'Bone Caster', model: 'mage', hp: 34, moves: [{ strAll: 2 }, { atk: 4 }, { atk: 6 }] },
-  champion: { name: 'Bone Champion', model: 'champion', hp: 92, moves: [{ atk: 7 }, { block: 10, str: 3 }, { atk: 4, hits: 2 }, { atk: 10 }] },
+  champion: { name: 'Bone Champion', model: 'champion', hp: 104, moves: [{ atk: 7 }, { block: 10, str: 3 }, { atk: 4, hits: 2 }, { atk: 10 }] },
 };
 
 // The run: three fights in order; the last is the elite.

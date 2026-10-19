@@ -1,4 +1,4 @@
-import { cardDamage } from '../core/sim.js';
+import { cardDamage, cardBlock, cardStr, cardDraw } from '../core/sim.js';
 
 // SHARED: what a card says on its face. Numbers are live (strength, the combo bonus,
 // per-card bonuses), worked out by the sim's own cardDamage, so the hand never lies.
@@ -10,10 +10,10 @@ export function cardText(data, f, card) {
     parts.push(`Deal <b>${d}</b>${card.hits > 1 ? ` ×${card.hits}` : ''}${card.all ? ' to ALL' : ''}.`);
     if (card.perCard) parts.push(`+${card.perCard} per card before it.`);
   }
-  if (card.block) parts.push(`Block <b>${card.block}</b>.`);
-  if (card.str) parts.push(`+${card.str} strength.`);
+  if (card.block) parts.push(`Block <b>${f ? cardBlock(data, f, card) : card.block}</b>.`);
+  if (card.str) parts.push(`+<b>${f ? cardStr(data, f, card) : card.str}</b> strength.`);
   if (card.expose) parts.push(`Expose ${card.expose} turns.`);
-  if (card.draw) parts.push(`Draw ${card.draw}.`);
+  if (card.draw) parts.push(`Draw <b>${f ? cardDraw(data, f, card) : card.draw}</b>.`);
   return parts.join(' ');
 }
 

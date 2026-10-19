@@ -25,7 +25,7 @@ Each item can be pasted alone into a fresh session. Every session reads `CLAUDE.
 
 ## Lane T: tuning (after the mode it tunes is merged)
 - [ ] **T1. Tune mode A after Brian's playtest.** Brian's notes become lines here first.
-  - 2026-10-19 note (setup playtest, fun 2.3, look 1.9): "Combos only worked for attacks but not block." Today the +25% combo bonus only touches damage; block (and buffs) on card 3+ get nothing. Answer each tuning ask with three candidate sets that each hit every target in `BALANCE.md`; fix timing or structure before stats; check limits against fight length. Files: `src/fast/data.js`, `src/view/families.js` (feel), SHARED: the card data (if a card changes, rerun the sim for every built mode).
+  - 2026-10-19 note (setup playtest, fun 2.3, look 1.9): "Combos only worked for attacks but not block." Today the +25% combo bonus only touches damage; block (and buffs) on card 3+ get nothing. **Done 2026-10-19:** Brian picked per-family combo rewards (option 2); shipped with tuning set 1 (Champion HP 104). Answer each tuning ask with three candidate sets that each hit every target in `BALANCE.md`; fix timing or structure before stats; check limits against fight length. Files: `src/fast/data.js`, `src/view/families.js` (feel), SHARED: the card data (if a card changes, rerun the sim for every built mode).
   *Done when:* Brian picks a set, it is merged, `npm run sim` passes for every built mode.
 - [ ] **T2. Tune B and C** the same way, after B1 / C1 and their playtests.
 

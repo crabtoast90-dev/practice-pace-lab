@@ -3,7 +3,7 @@
 // the fight), scores where each order leaves the fight, and plays the first card of the
 // best one; then it plans again (so drawn cards count). Its weights live in each mode's
 // data file under bot (ask for changes by name).
-import { resolveCard, intentDamage } from './sim.js';
+import { resolveCard, intentDamage, cardDraw } from './sim.js';
 
 function copyFight(f) {
   return { ...f, hero: { ...f.hero }, enemies: f.enemies.map((e) => ({ ...e })), hand: f.hand.slice(), drawn: f.drawn ?? 0 };
@@ -46,9 +46,9 @@ function plan(data, f0) {
         const g = copyFight(f);
         g.hand.splice(h, 1);
         g.energy -= card.cost;
+        g.drawn += cardDraw(data, g, card);
         resolveCard(data, g, card, t);
         g.played++;
-        g.drawn += card.draw ?? 0;
         const action = first ?? { type: 'play', hand: h, target: t };
         const sc = score(data, f0, g);
         if (sc > best.score + 1e-9) best = { score: sc, action };

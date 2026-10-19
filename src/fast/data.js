@@ -18,7 +18,19 @@ export const FAST = {
     energy: 3, // per turn
     draw: 5, // cards drawn each turn
     handMax: 10,
-    combo: { at: 3, bonusPct: 25 }, // the 3rd card of a turn onward deals +25%: the combo moment
+    // The combo moment: from the 3rd card of a turn on, each family gets its own reward
+    // (Brian's pick, 2026-10-19). dmgPct / blockPct add a percentage; str / draw add flat.
+    combo: {
+      at: 3,
+      bonus: {
+        light: { dmgPct: 25 },
+        heavy: { dmgPct: 25 },
+        area: { dmgPct: 25 },
+        finisher: { dmgPct: 25 },
+        block: { blockPct: 50 }, // Guard 5 -> 7, Iron Wall 13 -> 19, Shield Bash's block 5 -> 7
+        buff: { str: 1, draw: 1 }, // Battle Cry +3 strength, Focus draws 3
+      },
+    },
     exposePct: 50, // an exposed skeleton takes +50% damage
     rewardChoices: 3, // pick 1 of 3 after each fight (or skip)
     healAfterFight: 0, // HP carries over as it is

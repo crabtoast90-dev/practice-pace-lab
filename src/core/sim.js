@@ -107,12 +107,17 @@ function startTurn(data, run) {
 
 // The card's numbers as they would land right now (strength, combo, per-card bonus):
 // the hand shows these, and the plan preview in mode B uses them too.
+// The combo reward this card's family gets if it is played now (rules.combo.bonus).
+export const comboBonus = (data, card, playedBefore) => (playedBefore + 1 >= data.rules.combo.at ? data.rules.combo.bonus[card.family] ?? {} : {});
+
 export function cardDamage(data, f, card, playedBefore = f.played) {
   if (!card.dmg) return 0;
-  let d = card.dmg + (card.perCard ?? 0) * playedBefore + f.hero.str;
-  if (playedBefore + 1 >= data.rules.combo.at) d *= 1 + data.rules.combo.bonusPct / 100;
-  return Math.floor(d);
+  const d = card.dmg + (card.perCard ?? 0) * playedBefore + f.hero.str;
+  return Math.floor(d * (1 + (comboBonus(data, card, playedBefore).dmgPct ?? 0) / 100));
 }
+export const cardBlock = (data, f, card, playedBefore = f.played) => (card.block ? Math.floor(card.block * (1 + (comboBonus(data, card, playedBefore).blockPct ?? 0) / 100)) : 0);
+export const cardStr = (data, f, card, playedBefore = f.played) => (card.str ? card.str + (comboBonus(data, card, playedBefore).str ?? 0) : 0);
+export const cardDraw = (data, f, card, playedBefore = f.played) => (card.draw ? card.draw + (comboBonus(data, card, playedBefore).draw ?? 0) : 0);
 
 const firstAlive = (f) => f.enemies.findIndex((e) => e.alive);
 
@@ -139,8 +144,8 @@ export function resolveCard(data, f, card, target) {
       }
     }
   }
-  if (card.block) f.hero.block += (out.block = card.block);
-  if (card.str) f.hero.str += (out.str = card.str);
+  if (card.block) f.hero.block += (out.block = cardBlock(data, f, card));
+  if (card.str) f.hero.str += (out.str = cardStr(data, f, card));
   if (card.expose && f.enemies[target]?.alive) f.enemies[target].exposed = Math.max(f.enemies[target].exposed, (out.expose = card.expose));
   out.target = target;
   return out;
@@ -157,11 +162,12 @@ function play(data, run, handIndex, target) {
   const [inst] = f.hand.splice(handIndex, 1);
   const card = data.cards[inst.id];
   f.energy -= card.cost;
+  const drawN = cardDraw(data, f, card);
   const r = resolveCard(data, f, card, target);
   f.played++;
   f.families[card.family] = (f.families[card.family] ?? 0) + 1;
   f.discard.push(inst);
-  const drew = card.draw ? drawCards(data, run, card.draw).map((c) => ({ ...c })) : [];
+  const drew = drawN ? drawCards(data, run, drawN).map((c) => ({ ...c })) : [];
   emit(run, { type: 'card', uid: inst.uid, id: inst.id, family: card.family, ...r, drew, snap: snap(data, f) });
   if (f.enemies.every((e) => !e.alive)) winFight(data, run);
 }
