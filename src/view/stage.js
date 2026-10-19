@@ -86,6 +86,7 @@ function arenaStage() {
     cinematic: {
       windup: { offset: V(-2.6, 0.5, 4.6), look: V(1.6, 1.1, 0), fov: 48 },
       impact: { offset: V(-0.4, 0.6, 4.4), look: V(-0.4, 1.1, 0), fov: 50 },
+      portraitPull: 1.9, // phone: the cuts sit this many times further back
     },
   };
 }

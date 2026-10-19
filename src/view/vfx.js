@@ -71,16 +71,16 @@ export function createVfx(scene) {
       });
     },
     // A column of light dropping onto a spot (finishers).
-    pillar(at, color, { radius = 0.7, height = 7, ms = 700 } = {}) {
+    pillar(at, color, { radius = 0.42, height = 7, ms = 700 } = {}) {
       const m = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius * 1.3, height, 24, 1, true), add(color, 0.6));
       m.position.set(at.x, height / 2, at.z);
       spawn(m, ms, (k) => { m.scale.set(1 - k * 0.7, 1, 1 - k * 0.7); m.material.opacity = 0.6 * (1 - k); });
       const core = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.35, radius * 0.35, height, 12, 1, true), add(0xffffff));
       core.position.copy(m.position);
-      spawn(core, ms * 0.6, (k) => { core.material.opacity = 0.7 * (1 - k); });
+      spawn(core, ms * 0.6, (k) => { core.material.opacity = 0.45 * (1 - k); });
     },
     // A shield bubble around a figure (block).
-    bubble(at, color, { radius = 1.15, ms = 560 } = {}) {
+    bubble(at, color, { radius = 0.85, ms = 460 } = {}) {
       const shell = new THREE.Mesh(new THREE.IcosahedronGeometry(radius, 1), add(color, 0.25));
       const wire = new THREE.Mesh(new THREE.IcosahedronGeometry(radius * 1.01, 1), add(color, 0.9));
       wire.material.wireframe = true;

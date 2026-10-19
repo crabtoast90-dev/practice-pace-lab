@@ -40,6 +40,7 @@ export function createBattlePlayer({ data, pace, figures, stage, rig, vfx, camer
   }
   const chest = (fig) => fig.group.position.clone().add(V(0, fig.height * 0.55, 0));
   const foeFig = (i) => foes[i]?.fig;
+  const far = () => (camera.aspect < 1 ? stage.cinematic.portraitPull : 1); // phones see less sideways: pull the cuts back
 
   function stop(ms) { if (!skipping) hitStop = Math.max(hitStop, ms); }
   function shake(m) { if (!skipping) rig.shake(m); }
@@ -214,7 +215,7 @@ export function createBattlePlayer({ data, pace, figures, stage, rig, vfx, camer
     if (ev.block) { burst(['bubble'], at, color); number(at, `+${ev.block} block`, 'blk'); }
     if (ev.str) { burst(['rise'], hero.group.position, color); number(at, `+${ev.str} strength`, 'buf'); }
     if (ev.drew?.length) { burst(['rise'], hero.group.position, color); number(at, `draw ${ev.drew.length}`, 'buf'); }
-    glow(hero, color, 0.2, 200);
+    glow(hero, color, 0.06, 200);
   }
 
   function cardBeat(ev) {
@@ -234,7 +235,7 @@ export function createBattlePlayer({ data, pace, figures, stage, rig, vfx, camer
       info.chain = ev.chain;
       info.lastCard = ev.id;
       hero.play(fam.clip, (fam.clipHit * 1000) / hitAt);
-      glow(hero, card.look.color, big ? 0.22 : 0.12, big ? M * fam.releaseAt : 140);
+      glow(hero, card.look.color, big ? 0.06 : 0.04, big ? M * fam.releaseAt : 140);
       if (card.block && card.dmg) selfEffect(ev, card); // Shield Bash: shield up as it charges
     });
     if (big) {
@@ -246,7 +247,7 @@ export function createBattlePlayer({ data, pace, figures, stage, rig, vfx, camer
         if (!skipping) {
           dimLights(fam.dim);
           const c = stage.cinematic.windup;
-          rig.cut({ position: hero.home.clone().add(c.offset), target: hero.home.clone().add(c.look), fov: c.fov });
+          rig.cut({ position: hero.home.clone().add(c.offset.clone().multiplyScalar(far())), target: hero.home.clone().add(c.look), fov: c.fov });
         }
         showBanner(card.name, card.look.color, 'title finisher');
       });
@@ -254,7 +255,7 @@ export function createBattlePlayer({ data, pace, figures, stage, rig, vfx, camer
       cue(hitAt - 1, () => {
         const t = foeFig(ev.target) ?? foeFig(groups[0]?.[0]?.target);
         const c = stage.cinematic.impact;
-        if (t && !skipping) rig.cut({ position: t.home.clone().add(c.offset), target: t.home.clone().add(c.look), fov: c.fov });
+        if (t && !skipping) rig.cut({ position: t.home.clone().add(c.offset.clone().multiplyScalar(far())), target: t.home.clone().add(c.look), fov: c.fov });
       });
     } else if (dest) {
       cue(0, () => tween(hero, dest, Math.min(hitAt * 0.55, 180)));

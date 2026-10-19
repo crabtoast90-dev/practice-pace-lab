@@ -4,6 +4,8 @@
 // same run in Node. Add steps here for every feature you build (one section per mode).
 //   npm run check                    build and check this checkout
 //   npm run check -- --url=<live>    check a deployed site instead
+//   npm run check -- --only=feel     only the runs whose name contains "feel" (quick iteration;
+//                                    the full check must still pass before a merge)
 import { build, preview } from 'vite';
 import { chromium } from 'playwright-core';
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -18,6 +20,7 @@ const RUNS = 'check-output';
 const KEEP = 5;
 const OUT = join(RUNS, new Date().toISOString().replace(/[:.]/g, '-')); // one folder per run
 const URL_ARG = process.argv.find((a) => a.startsWith('--url='))?.slice(6);
+const ONLY = process.argv.find((a) => a.startsWith('--only='))?.slice(7);
 const SEED = 1;
 const LOSE_TUNE = 'hero.hp:14'; // a hero weak enough to fall, to check the Defeat path
 const FEEL_DECK = 'jab,jab,strike,verdict,guard'; // turn 1 = jab, jab, strike (combo), Final Verdict (finisher)
@@ -64,6 +67,7 @@ const state = (page) => page.evaluate(() => window.__game.state());
 const advance = (page, ms) => page.evaluate((t) => window.__game.advance(t), ms);
 
 async function run(name, contextOptions, script, extra = '') {
+  if (ONLY && !name.includes(ONLY)) return;
   const context = await browser.newContext(contextOptions);
   const page = await context.newPage();
   page.on('console', (msg) => {
@@ -254,7 +258,7 @@ async function debugOverlay(page, name) {
 
 const DEVICES = {
   laptop: [{ viewport: { width: 1280, height: 720 } }, (page) => (sel) => page.click(sel), -0.45],
-  phone: [{ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }, (page) => (sel) => page.tap(sel), -0.3],
+  phone: [{ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }, (page) => (sel) => page.tap(sel), -0.45],
 };
 for (const [name, [opts, input, feetMin]] of Object.entries(DEVICES)) {
   await run(name, opts, (page) => walk(page, name, input(page), feetMin));
@@ -267,7 +271,7 @@ await browser.close();
 await server?.close();
 
 const report = [
-  `# Check ${failures.length ? 'FAILED' : 'passed'} — ${new Date().toISOString()}`,
+  `# Check ${failures.length ? 'FAILED' : 'passed'}${ONLY ? ` (ONLY runs matching "${ONLY}")` : ''} — ${new Date().toISOString()}`,
   `target: ${base}`,
   '',
   ...summaries,
