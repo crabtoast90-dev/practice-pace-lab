@@ -24,7 +24,8 @@ Each item can be pasted alone into a fresh session. Every session reads `CLAUDE.
   *Done when:* the check plays a run on laptop and phone with scripted pick times (on time, late = combo ends), matching Node; screenshots show the timer mid-combo and a pair/straight bonus; `BALANCE.md` has a mode C section passing both targets with the bot's delay, and reports how often the timer ends a combo.
 
 ## Lane T: tuning (after the mode it tunes is merged)
-- [ ] **T1. Tune mode A after Brian's playtest.** Brian's notes become lines here first. Answer each tuning ask with three candidate sets that each hit every target in `BALANCE.md`; fix timing or structure before stats; check limits against fight length. Files: `src/fast/data.js`, `src/view/families.js` (feel), SHARED: the card data (if a card changes, rerun the sim for every built mode).
+- [ ] **T1. Tune mode A after Brian's playtest.** Brian's notes become lines here first.
+  - 2026-10-19 note (setup playtest, fun 2.3, look 1.9): "Combos only worked for attacks but not block." Today the +25% combo bonus only touches damage; block (and buffs) on card 3+ get nothing. Answer each tuning ask with three candidate sets that each hit every target in `BALANCE.md`; fix timing or structure before stats; check limits against fight length. Files: `src/fast/data.js`, `src/view/families.js` (feel), SHARED: the card data (if a card changes, rerun the sim for every built mode).
   *Done when:* Brian picks a set, it is merged, `npm run sim` passes for every built mode.
 - [ ] **T2. Tune B and C** the same way, after B1 / C1 and their playtests.
 
