@@ -1,6 +1,6 @@
 # Balance report
 
-Written by `npm run sim` on 2026-10-20 08:37 UTC. Do not edit by hand.
+Written by `npm run sim` on 2026-10-20 08:47 UTC. Do not edit by hand.
 
 ## Headline
 
@@ -51,12 +51,8 @@ Shield Bash | block | 1 | 311 | 42 | 153
 Iron Wall | block | 2 | 315 | 43 | 36
 Final Verdict | finisher | 1 | 294 | 216 | 743
 Skyfall | finisher | 2 | 319 | 47 | 25
-Ember Cut | light | 1 | 0 | - | 0
-Wildfire | area | 2 | 0 | - | 0
-Quickstep | light | 0 | 0 | - | 0
-Tempo Rush | buff | 1 | 0 | - | 0
 
-- Never played: Quick Jab, Ember Cut, Wildfire, Quickstep, Tempo Rush.
+- Never played: Quick Jab.
 
 ## Mode: B Plan then Watch
 
@@ -99,12 +95,8 @@ Shield Bash | block | 1 | 158 | 20 | 73
 Iron Wall | block | 2 | 160 | 23 | 16
 Final Verdict | finisher | 1 | 153 | 115 | 389
 Skyfall | finisher | 2 | 165 | 20 | 8
-Ember Cut | light | 1 | 0 | - | 0
-Wildfire | area | 2 | 0 | - | 0
-Quickstep | light | 0 | 0 | - | 0
-Tempo Rush | buff | 1 | 0 | - | 0
 
-- Never played: Quick Jab, Ember Cut, Wildfire, Quickstep, Tempo Rush.
+- Never played: Quick Jab.
 
 ## Mode: C Spirit Combo
 
