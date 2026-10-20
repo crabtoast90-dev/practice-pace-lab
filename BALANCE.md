@@ -1,12 +1,12 @@
 # Balance report
 
-Written by `npm run sim` on 2026-10-20 07:20 UTC. Do not edit by hand.
+Written by `npm run sim` on 2026-10-20 08:09 UTC. Do not edit by hand.
 
 ## Headline
 
 - A Fast: all targets pass. Wins 62%, fights 4.3 / 4.8 / 6.6 turns.
 - B Plan then Watch: all targets pass. Wins 66%, fights 4.3 / 4.8 / 6.6 turns.
-- C Spirit Combo: misses a target. Wins 100%, fights 2.6 / 2.3 / 3.1 turns.
+- C Spirit Combo: misses a target. Wins 100%, fights 2.6 / 2.4 / 3.1 turns.
 
 Balance is information only for this practice run (see CLAUDE.md).
 
@@ -103,48 +103,48 @@ Skyfall | finisher | 2 | 165 | 20 | 8
 300 seeded runs (seeds 1-300), played by the bot (src/core/bot.js).
 
 - Bot run win rate 100% against target 62% (accepting 55-70%): **FAILS** (too easy).
-- Fight length 2.6 / 2.3 / 3.1 turns against target 4-7: **FAILS** (Crypt Gate, Ossuary, Champion of Bone out of range).
-- Winning runs end with 66 of 72 HP on average.
+- Fight length 2.6 / 2.4 / 3.1 turns against target 4-7: **FAILS** (Crypt Gate, Ossuary, Champion of Bone out of range).
+- Winning runs end with 67 of 72 HP on average.
 - Same seed, same run: yes (seed 1 played twice gives identical events).
 
 ### Fights
 
 fight | reached | won | turns (avg, shortest-longest) | HP lost (avg)
 --- | --- | --- | --- | ---
-Crypt Gate | 300 | 100% | 2.6 (2-3) | 0.4
-Ossuary | 300 | 100% | 2.3 (2-4) | 0.9
-Champion of Bone (elite) | 300 | 100% | 3.1 (2-5) | 4.9
+Crypt Gate | 300 | 100% | 2.6 (2-4) | 0.4
+Ossuary | 300 | 100% | 2.4 (1-4) | 0.5
+Champion of Bone (elite) | 300 | 100% | 3.1 (2-5) | 4.2
 
 ### Combo moments
 
-- Turns where the bot plays 3+ cards (the combo moment): 82% of 2708 turns.
-- Cards per turn: 4.0 on average; 1: 3%, 2: 4%, 3: 5%, 4: 9%, 5+: 68%.
+- Turns where the bot plays 3+ cards (the combo moment): 81% of 2715 turns.
+- Cards per turn: 4.0 on average; 1: 4%, 2: 4%, 3: 4%, 4: 8%, 5+: 69%.
 
 ### Does every card get used?
 
 card | family | cost | offered | picked | played (all runs)
 --- | --- | --- | --- | --- | ---
-Strike | light | 1 | starter | - | 5782
-Quick Jab | light | 0 | 147 | - | 0
-Twin Slash | light | 1 | 163 | 85 | 181
-Heavy Blow | heavy | 2 | 147 | 147 | 295
-Crushing Chop | heavy | 2 | starter | - | 1166
-Sunder | heavy | 1 | 148 | - | 0
-Sweep | area | 1 | 154 | 25 | 43
-Whirlwind | area | 2 | 138 | 101 | 205
-Battle Cry | buff | 1 | 156 | 70 | 147
-Focus | buff | 0 | 147 | - | 0
-Guard | block | 1 | starter | - | 2772
-Shield Bash | block | 1 | 147 | 18 | 40
-Iron Wall | block | 2 | 142 | 25 | 47
-Final Verdict | finisher | 1 | 144 | 112 | 195
-Skyfall | finisher | 2 | 167 | 17 | 29
+Strike | light | 1 | starter | - | 5676
+Quick Jab | light | 0 | 135 | - | 0
+Twin Slash | light | 1 | 177 | 86 | 190
+Heavy Blow | heavy | 2 | 145 | 145 | 285
+Crushing Chop | heavy | 2 | starter | - | 1190
+Sunder | heavy | 1 | 131 | - | 0
+Sweep | area | 1 | 161 | 25 | 51
+Whirlwind | area | 2 | 153 | 117 | 230
+Battle Cry | buff | 1 | 146 | 59 | 125
+Focus | buff | 0 | 146 | - | 0
+Guard | block | 1 | starter | - | 2836
+Shield Bash | block | 1 | 138 | 14 | 33
+Iron Wall | block | 2 | 156 | 30 | 65
+Final Verdict | finisher | 1 | 143 | 107 | 182
+Skyfall | finisher | 2 | 169 | 17 | 28
 
 - Never played: Quick Jab, Sunder, Focus.
 
 ### Combos and spirit numbers
 
-Bot picks each card 900 ms after the last; the timer is 2500 ms.
+Bot picks each card 900 ms after the last; the timer is 5000 ms.
 
-- How combos end (1508): limit 84%, finisher 11%, stop 6%. The timer ended 0% of combos.
-- Spirit bonuses: 34% of cards made a pair, 1% a straight.
+- How combos end (1515): limit 87%, finisher 9%, stop 4%. The timer ended 0% of combos.
+- Spirit bonuses: 7% of cards made a pair, 13% a straight.

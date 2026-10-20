@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { createRun, act, canPlay } from '../core/sim.js';
+import { createRun, act, canPlay, cardOf } from '../core/sim.js';
 import { botAction } from '../core/bot.js';
 import { digest } from '../core/rng.js';
 import { createBattlePlayer } from './battle-player.js';
@@ -123,7 +123,7 @@ export function createKaitosView({ data, seed, figures, stage, rig, vfx, camera,
     const hand = $('hand');
     if (ready) {
       hand.innerHTML = f.hand.map((c, i) => {
-        const card = data.cards[c.id];
+        const card = cardOf(data, c);
         return `<button class="card${canPlay(data, run, i) ? '' : ' off'}" data-uid="${c.uid}" data-family="${card.family}" style="--c:${card.look.color}"><span class="key">${i + 1}</span>${cardHtml(data, f, card)}</button>`;
       }).join('');
       $('turn-note').hidden = true;

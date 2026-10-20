@@ -25,7 +25,7 @@ const URL_ARG = process.argv.find((a) => a.startsWith('--url='))?.slice(6);
 const ONLY = process.argv.find((a) => a.startsWith('--only='))?.slice(7);
 const SEED = 1;
 const LOSE_TUNE = 'hero.hp:14'; // a hero weak enough to fall, to check the Defeat path
-const KAITOS_DECK = 'strike,twin,sunder,guard,guard,jab'; // spirits 3,4,5 (a straight), 2,2 (a pair), 1
+const KAITOS_DECK = 'guard,strike,guard,twin,strike,jab'; // dealt spirits: guard 1, strike 2, guard 3, twin 4, strike 4, jab 1
 const PLAN_DRAW_DECK = 'strike,focus,guard,jab,heavy,sweep,cry'; // seed 1 opens with jab, sweep, heavy, focus, cry; Focus draws strike + guard
 const FEEL_DECK = 'jab,jab,strike,verdict,guard'; // turn 1 = jab, jab, strike (combo), Final Verdict (finisher), Guard (block combo)
 
@@ -351,7 +351,7 @@ async function walkPlan(page, name, click, feetMin) {
     } else if (a.type === 'go') {
       await click('#end-turn');
       await advance(page, 100);
-      if (await page.isEnabled('#skip')) await click('#skip');
+      if ((await page.isVisible('#skip')) && (await page.isEnabled('#skip'))) await click('#skip');
     } else if (a.type === 'pick') {
       if (!taken.reward) { taken.reward = true; await shot(page, name, '5-reward'); }
       await click(a.card ? `#reward-cards .card[data-card="${a.card}"]` : '#reward-skip');
@@ -429,7 +429,7 @@ async function walkKaitos(page, name, click, feetMin) {
     }
     if (!s.mode.inputReady) {
       await advance(page, 100);
-      if (await page.isEnabled('#skip')) await click('#skip');
+      if ((await page.isVisible('#skip')) && (await page.isEnabled('#skip'))) await click('#skip');
       continue;
     }
     const a = await page.evaluate(() => window.__game.bot());
@@ -465,9 +465,10 @@ async function kaitosFeel(page, name, click) {
   const data = applyDeck(KAITOS, KAITOS_DECK);
   const GAP = 600; // ms between picks (36 frames: exact on the game clock)
   let s = await waitFor(page, name, 'the first hand', (x) => x.mode?.inputReady);
-  const tap = async (id) => {
-    const uid = await page.evaluate((cname) => [...document.querySelectorAll('#hand .card')].find((e) => e.querySelector('.cname').textContent === cname)?.dataset.uid, data.cards[id].name);
-    if (!uid) return failures.push(`[${name}] ${id} not in hand`);
+  // A card by name and spirit number (two Guards differ only by their number).
+  const tap = async (id, sp) => {
+    const uid = await page.evaluate(([cname, n]) => [...document.querySelectorAll('#hand .card')].find((e) => e.querySelector('.cname').textContent === cname && (n === undefined || e.querySelector('.cost').textContent === String(n)))?.dataset.uid, [data.cards[id].name, sp]);
+    if (!uid) return failures.push(`[${name}] ${id} ${sp ?? ''} not in hand`);
     await click(`#hand .card[data-uid="${uid}"]`);
   };
   // Wait `ms` frame by frame (so a moment can be caught on screen), then pick `id`.
@@ -479,13 +480,13 @@ async function kaitosFeel(page, name, click) {
         if (when(m)) { taken[name + shotName] = true; await shot(page, name, shotName); }
       }
     }
-    await tap(id);
+    await tap(...id);
   };
-  await tap('strike');
-  await waitTap('twin', GAP, '1-timer', (m) => m.comboOpen && m.timeLeft < 2200);
-  await waitTap('sunder', GAP);
-  await waitTap('guard', GAP, '2-straight', (m) => m.spiritMoments > 0 && m.hitStop);
-  await waitTap('guard', GAP);
+  await tap('guard', 1);
+  await waitTap(['strike', 2], GAP, '1-timer', (m) => m.comboOpen && m.timeLeft < KAITOS.rules.chain.pickMs - 300);
+  await waitTap(['guard', 3], GAP);
+  await waitTap(['twin', 4], GAP, '2-straight', (m) => m.spiritMoments > 0 && m.hitStop);
+  await waitTap(['strike', 4], GAP);
   s = await waitFor(page, name, 'the pair', (x) => x.mode.spiritMoments >= 2 && x.mode.hitStop, 10);
   await shot(page, name, '3-pair');
   s = await waitFor(page, name, 'turn 2', (x) => x.mode.inputReady && x.mode.turn === 2, 50);
@@ -499,13 +500,13 @@ async function kaitosFeel(page, name, click) {
   s = await waitFor(page, name, 'turn 3', (x) => x.mode.inputReady && x.mode.turn === 3, 50);
   if (!s.mode.comboEnds.includes('timeout')) failures.push(`[${name}] the timer did not end the combo`);
   const node = createRun(data, SEED);
-  const pickN = (id, atMs) => act(data, node, { type: 'play', hand: node.fight.hand.findIndex((c) => c.id === id), target: 0, atMs });
-  pickN('strike', 0);
-  for (const id of ['twin', 'sunder', 'guard', 'guard']) pickN(id, GAP);
+  const pickN = (id, atMs, sp) => act(data, node, { type: 'play', hand: node.fight.hand.findIndex((c) => c.id === id && (sp === undefined || (c.spirit ?? data.cards[c.id].spirit) === sp)), target: 0, atMs });
+  pickN('guard', 0, 1);
+  for (const [id, sp] of [['strike', 2], ['guard', 3], ['twin', 4], ['strike', 4]]) pickN(id, GAP, sp);
   pickN(first, 0);
   act(data, node, { type: 'end', reason: 'timeout' });
   if (s.mode.digest !== digest(node.events)) failures.push(`[${name}] scripted combo differs from Node (browser ${s.mode.digest}, Node ${digest(node.events)})`);
-  else summaries.push(`[${name}] straight 3-4-5 and pair 2-2 paid, 5 cards ended the combo, a late pick timed out; matches Node (${digest(node.events)})`);
+  else summaries.push(`[${name}] straight 1-2-3-4 and pair 4-4 paid, 5 cards ended the combo, a late pick timed out; matches Node (${digest(node.events)})`);
 }
 
 const DEVICES = {

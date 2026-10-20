@@ -13,6 +13,11 @@ export const KAITOS = {
   enemies: ENEMIES,
   fights: FIGHTS,
 
+  // Each starting copy's own spirit number (Brian, 2026-10-20: "a range of numbers" for the
+  // strikes and blocks). Copies are dealt these in deck order; cards from rewards keep
+  // cards.<id>.spirit.
+  spiritDeal: { strike: [2, 4, 5, 7, 8], guard: [1, 3, 6, 9] },
+
   rules: {
     energy: 0, // no energy in C: the combo limit and the timer are the budget
     draw: 6, // one more than the limit, so every turn leaves a choice
@@ -20,7 +25,7 @@ export const KAITOS = {
     // The combo: up to `limit` cards a turn. The first has no timer; each next card must be
     // picked within pickMs of the one before (?tune=rules.chain.pickMs:3000). Finishers need
     // finisherMin cards before them and end the combo. An empty hand ends it too.
-    chain: { limit: 5, pickMs: 2500, finisherMin: 3, finisherEnds: true },
+    chain: { limit: 5, pickMs: 5000, finisherMin: 3, finisherEnds: true }, // pickMs 2500 -> 5000: Brian, 2026-10-20
     // Spirit numbers: a card matching the last card's number (a pair) or continuing a run of
     // consecutive numbers, up or down, to 3+ (a straight) gets extra damage and block:
     // pair +pairPct %; straight +straightPct % at 3 cards, x2 at 4, x3 at 5.

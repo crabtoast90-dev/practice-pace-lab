@@ -25,12 +25,22 @@ export function createRun(data, seed = 1) {
     stats: [], // one entry per fight: turns, HP lost, cards played by family
     events: [],
   };
-  for (const id of data.starterDeck) run.deck.push(newCard(run, id));
+  // Mode C (spiritDeal): each starting copy of a card can carry its own spirit number.
+  const copies = {};
+  for (const id of data.starterDeck) {
+    const deal = data.spiritDeal?.[id];
+    const k = (copies[id] = (copies[id] ?? -1) + 1);
+    run.deck.push(newCard(run, id, deal ? deal[k % deal.length] : undefined));
+  }
   startFight(data, run);
   return run;
 }
 
-const newCard = (run, id) => ({ uid: ++run.uid, id });
+const newCard = (run, id, spirit) => (spirit === undefined ? { uid: ++run.uid, id } : { uid: ++run.uid, id, spirit });
+
+// The card a copy in the hand plays as: the card's data, with this copy's own spirit
+// number when it has one (mode C).
+export const cardOf = (data, inst) => (inst.spirit === undefined ? data.cards[inst.id] : { ...data.cards[inst.id], spirit: inst.spirit });
 const emit = (run, ev) => (run.events.push(ev), ev);
 
 export const intentOf = (data, e) => {
@@ -184,7 +194,7 @@ export function playable(data, f, card) {
 export function canPlay(data, run, handIndex) {
   const f = run.fight;
   const c = f?.hand[handIndex];
-  return run.phase === 'fight' && !!c && playable(data, f, data.cards[c.id]);
+  return run.phase === 'fight' && !!c && playable(data, f, cardOf(data, c));
 }
 
 // After a card in mode C: does the combo end by itself? (finisher, limit, empty hand)
@@ -200,7 +210,7 @@ function chainOver(data, f, card) {
 function play(data, run, handIndex, target, atMs) {
   const f = run.fight;
   const [inst] = f.hand.splice(handIndex, 1);
-  const card = data.cards[inst.id];
+  const card = cardOf(data, inst);
   if (!data.rules.chain) f.energy -= card.cost;
   const drawN = cardDraw(data, f, card);
   const r = resolveCard(data, f, card, target);
