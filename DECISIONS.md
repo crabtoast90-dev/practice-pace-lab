@@ -54,3 +54,4 @@ One dated line per decision. Lines marked *(my call)* are technical or naming ca
 - 2026-10-20: Brian: retest C with 5 s per pick and a range of spirit numbers on the strikes and blocks. Done: rules.chain.pickMs 2500 → 5000; each starting copy gets its own number via spiritDeal.
 - 2026-10-20: The spread: Strikes 2, 4, 5, 7, 8; Guards 1, 3, 6, 9 (Crushing Chop stays 6); reward cards keep their card's number. Only C deals per-copy numbers. *(my call)*
 - 2026-10-20: Brian: C's card depth should come from keywords and synergies (Bazaar-style Burn / Haste builds where cards combo together), giving picks context beyond a tier list. Logged in IDEAS.md; not built.
+- 2026-10-20: Brian: liked identities tied to spirit hands (straights vs pairs, maybe more poker hands) and Haste extending combos; cross-identity decks (Haste + Burn on a long straight) are the synergy he wants C built on. Logged in IDEAS.md; not built.
