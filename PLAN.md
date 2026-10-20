@@ -27,6 +27,7 @@ Each item can be pasted alone into a fresh session. Every session reads `CLAUDE.
 - [ ] **T1. Tune mode A after Brian's playtest.** Brian's notes become lines here first.
   - 2026-10-19 note (setup playtest, fun 2.3, look 1.9): "Combos only worked for attacks but not block." Today the +25% combo bonus only touches damage; block (and buffs) on card 3+ get nothing. **Done 2026-10-19:** Brian picked per-family combo rewards (option 2); shipped with tuning set 1 (Champion HP 104). Answer each tuning ask with three candidate sets that each hit every target in `BALANCE.md`; fix timing or structure before stats; check limits against fight length. Files: `src/fast/data.js`, `src/view/families.js` (feel), SHARED: the card data (if a card changes, rerun the sim for every built mode).
   *Done when:* Brian picks a set, it is merged, `npm run sim` passes for every built mode.
+  - 2026-10-20 notes (B playtest): (1) "There is a card that removes enemy block, but enemies never blocked." The skeletons do block (a skeleton holds block on about 1 player turn in 3 in fight 1, 1 in 7 in fight 2, 1 in 5 in the elite), but it only shows as a small "6 block" tag and a "DEFEND" intent, and Sunder's text never says how much it would break: a readability problem. (2) "Combo requires playing 3 cards, which makes you feel bad about playing the 2 cost spell." Brian: don't act on this now.
 - [ ] **T2. Tune B and C** the same way, after B1 / C1 and their playtests.
 
 ## Ship
