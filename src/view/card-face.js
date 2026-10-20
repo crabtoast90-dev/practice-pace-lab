@@ -1,4 +1,4 @@
-import { cardDamage, cardBlock, cardStr, cardDraw } from '../core/sim.js';
+import { cardDamage, cardBlock, cardStr, cardDraw, spiritBonus, playable } from '../core/sim.js';
 
 // SHARED: what a card says on its face. Numbers are live (strength, the combo bonus,
 // per-card bonuses), worked out by the sim's own cardDamage, so the hand never lies.
@@ -19,6 +19,16 @@ export function cardText(data, f, card) {
 
 const FAMILY_NAMES = { light: 'Light', heavy: 'Heavy', area: 'Area', buff: 'Buff', block: 'Block', finisher: 'Finisher' };
 
+// Mode C (rules.chain): the corner shows the spirit number instead of the cost, and the card
+// says what its number would earn now (pair / straight) or why it can't be played yet.
 export function cardHtml(data, f, card) {
-  return `<span class="cost">${card.cost}</span><span class="cname">${card.name}</span><span class="fam">${FAMILY_NAMES[card.family]}</span><span class="ctext">${cardText(data, f, card)}</span>`;
+  const ch = data.rules.chain;
+  const corner = ch ? `<span class="cost spirit">${card.spirit}</span>` : `<span class="cost">${card.cost}</span>`;
+  let extra = '';
+  if (ch && f) {
+    const sb = spiritBonus(data, f, card);
+    if (sb.kind) extra = `<span class="sb">${sb.kind === 'pair' ? 'PAIR' : `STRAIGHT ${sb.len}`} +${sb.pct}%</span>`;
+    else if (card.family === 'finisher' && !playable(data, f, card) && f.played < ch.finisherMin) extra = `<span class="sb lock">needs ${ch.finisherMin} cards first</span>`;
+  } else if (ch && card.family === 'finisher') extra = `<span class="sb lock">needs ${ch.finisherMin} cards first · ends the combo</span>`;
+  return `${corner}<span class="cname">${card.name}</span><span class="fam">${FAMILY_NAMES[card.family]}</span><span class="ctext">${cardText(data, f, card)}</span>${extra}`;
 }

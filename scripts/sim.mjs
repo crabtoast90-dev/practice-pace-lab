@@ -4,6 +4,7 @@
 import { writeFileSync } from 'node:fs';
 import { FAST } from '../src/fast/data.js';
 import { PLAN } from '../src/plan/data.js';
+import { KAITOS } from '../src/kaitos/data.js';
 import { createRun, act } from '../src/core/sim.js';
 import { botAction } from '../src/core/bot.js';
 import { digest } from '../src/core/rng.js';
@@ -93,6 +94,23 @@ function section(title, data, m) {
 const A = section('A Fast', FAST, measure(FAST));
 // B plays the same rules as A (only the pace differs), so the bot's numbers match A's.
 const B = section('B Plan then Watch', PLAN, measure(PLAN));
+const cm = measure(KAITOS);
+const C = section('C Spirit Combo', KAITOS, cm);
+// C only: how combos end, and how often spirit numbers pay, with the bot picking every
+// bot.delayMs against a pickMs timer.
+{
+  const ends = {};
+  const kinds = {};
+  let cards = 0;
+  for (const r of cm.runs) for (const e of r.events) {
+    if (e.type === 'comboEnd') ends[e.reason] = (ends[e.reason] ?? 0) + 1;
+    if (e.type === 'card') { cards++; if (e.spirit?.kind) kinds[e.spirit.kind] = (kinds[e.spirit.kind] ?? 0) + 1; }
+  }
+  const total = Object.values(ends).reduce((a, b) => a + b, 0);
+  C.body.push('', '### Combos and spirit numbers', '', `Bot picks each card ${KAITOS.bot.delayMs} ms after the last; the timer is ${KAITOS.rules.chain.pickMs} ms.`, '');
+  C.body.push(`- How combos end (${total}): ${Object.entries(ends).map(([k, v]) => `${k} ${pct(v, total)}`).join(', ')}. The timer ended ${pct(ends.timeout ?? 0, total)} of combos.`);
+  C.body.push(`- Spirit bonuses: ${pct(kinds.pair ?? 0, cards)} of cards made a pair, ${pct(kinds.straight ?? 0, cards)} a straight.`);
+}
 
 line('# Balance report');
 line();
@@ -102,13 +120,15 @@ line('## Headline');
 line();
 line(`- ${A.head}`);
 line(`- ${B.head}`);
-line('- C Spirit Combo: coming (not built yet).');
+line(`- ${C.head}`);
 line();
 line('Balance is information only for this practice run (see CLAUDE.md).');
 line();
 for (const s of A.body) line(s);
 line();
 for (const s of B.body) line(s);
+line();
+for (const s of C.body) line(s);
 
 writeFileSync('BALANCE.md', out.join('\n') + '\n');
 console.log(out.join('\n'));

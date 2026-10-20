@@ -122,7 +122,7 @@ body.in-mode #credits { display: none; }
   .plate { min-width: 84px; font-size: 10.5px; padding: 3px 5px; }
   .ib { font-size: 10.5px; padding: 1px 5px; }
   .banner { font-size: 26px; }
-  .banner.combo { font-size: 40px; }
+  .banner.combo { font-size: min(40px, 7.4vw); letter-spacing: 0; }
   .banner.finisher { font-size: 32px; }
   .num { font-size: 22px; }
   .num.combo { font-size: 28px; }
@@ -157,3 +157,15 @@ body.in-mode #credits { display: none; }
   .qcard .qn { left: 4px; font-size: 10px; }
   .qcard .qt { display: none; }
 }
+
+/* mode C: spirit combo */
+#timer { position: relative; height: 18px; margin: 0 auto 6px; max-width: 520px; border-radius: 9px; background: #2a2440; overflow: hidden; }
+#timer i { position: absolute; inset: 0; transform-origin: left; transform: scaleX(var(--left, 1)); background: linear-gradient(90deg, #8a5cff, #c8a0ff); }
+#timer.low i { background: linear-gradient(90deg, #ff5a3c, #ff9a6a); }
+#timer-text { position: relative; display: block; text-align: center; font: 700 12px/18px system-ui; color: #fff; text-shadow: 0 1px 0 #000; }
+.cost.spirit { background: radial-gradient(circle at 40% 35%, #e8d4ff, #7a4ad8); color: #1a0a3a; }
+.sb { margin-top: auto; font: 800 10px system-ui; letter-spacing: 0.5px; color: #ffd84a; }
+.sb.lock { color: #c8a0ff; font-weight: 600; }
+#chain.spirits { display: inline-flex; gap: 4px; background: none; padding: 0; }
+#chain.spirits i { font: 800 15px system-ui; font-style: normal; width: 26px; height: 26px; border-radius: 13px; display: inline-flex; align-items: center; justify-content: center; background: radial-gradient(circle at 40% 35%, #e8d4ff, #7a4ad8); color: #1a0a3a; }
+@media (max-width: 640px) { .sb { font-size: 8.5px; } #timer { height: 16px; } #timer-text { line-height: 16px; font-size: 11px; } }

@@ -10,6 +10,8 @@ import { FAST as FAST_DATA } from './fast/data.js';
 import { createFastView } from './view/fast-view.js';
 import { PLAN as PLAN_DATA } from './plan/data.js';
 import { createPlanView } from './view/plan-view.js';
+import { KAITOS as KAITOS_DATA } from './kaitos/data.js';
+import { createKaitosView } from './view/kaitos-view.js';
 
 // Start screen picks a pace mode; each mode is one view over the same arena. Rules live
 // in the sim (src/core/sim.js + each mode's data file); this file only shows what they hold.
@@ -17,9 +19,9 @@ const params = new URLSearchParams(location.search);
 const TEST = params.has('test'); // ?test: the clock only moves when the check calls advance()
 const seed = Number(params.get('seed') ?? 1); // ?seed=N picks the run
 const tuned = (d) => applyDeck(applyTune(d, params.get('tune')), params.get('deck')); // ?tune=rules.energy:4  ?deck=strike,verdict
-const DATA = { fast: tuned(FAST_DATA), plan: tuned(PLAN_DATA) };
-const VIEWS = { fast: createFastView, plan: createPlanView };
-const MODES = Object.keys(VIEWS); // C (kaitos) shows as "coming"
+const DATA = { fast: tuned(FAST_DATA), plan: tuned(PLAN_DATA), kaitos: tuned(KAITOS_DATA) };
+const VIEWS = { fast: createFastView, plan: createPlanView, kaitos: createKaitosView };
+const MODES = Object.keys(VIEWS);
 const $ = (id) => document.getElementById(id);
 
 const canvas = $('game');
@@ -128,6 +130,7 @@ window.__game = {
   enter,
   leave,
   bot: () => view?.bot() ?? null, // the bot's next move as what to tap (the check uses it)
+  events: () => view?.run.events ?? [], // the sim's full event list, to find where a run differs from Node
   // Test clock: advance simulated time in fixed steps, then draw one frame.
   advance(ms) {
     for (let t = 0; t < ms / 1000 - 1e-9; t += STEP) step(STEP);

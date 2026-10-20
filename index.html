@@ -22,10 +22,9 @@
           <b>B · Plan then Watch</b>
           <span>Queue the whole turn with exact previews, press GO, watch it play out.</span>
         </button>
-        <button class="mode coming" data-mode="kaitos" disabled>
+        <button class="mode" data-mode="kaitos" disabled>
           <b>C · Spirit Combo</b>
           <span>Chain up to 5 cards on a timer while the attacks play. Pairs and straights pay.</span>
-          <em>coming</em>
         </button>
       </div>
       <p id="loading">Loading…</p>
@@ -41,6 +40,7 @@
       <div id="banner" class="banner" hidden></div>
       <div class="bottom">
         <div class="status"><span id="energy" class="orb"></span><span id="chain" hidden></span><span id="piles"></span></div>
+        <div id="timer" hidden><i></i><span id="timer-text"></span></div>
         <div id="queue" hidden></div>
         <div id="hand"></div>
         <div id="turn-note" hidden></div>

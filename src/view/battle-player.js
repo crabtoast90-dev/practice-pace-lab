@@ -29,7 +29,7 @@ export function createBattlePlayer({ data, pace, figures, stage, rig, vfx, camer
   let foes = [];
   let preview = null; // mode B: what the plates will read after the planned turn
   const shown = { hero: { hp: data.hero.hp, block: 0, str: 0 }, enemies: [] };
-  const info = { turnKey: null, fight: -1, chain: 0, lastCard: null, cinematic: false, lastEvent: null, impacts: 0, combos: 0, finishers: 0, cuts: 0 };
+  const info = { turnKey: null, fight: -1, chain: 0, lastCard: null, cinematic: false, lastEvent: null, impacts: 0, combos: 0, finishers: 0, cuts: 0, spiritMoments: 0, comboEnds: [] };
 
   // ---- small helpers on the game clock ----
   const after = (ms, fn) => timers.push({ ms, fn });
@@ -205,24 +205,32 @@ export function createBattlePlayer({ data, pace, figures, stage, rig, vfx, camer
         after(fam.hitStopMs + 80, () => tween(f, f.home, 160));
       }
     }
-    stop(fam.hitStopMs + (ev.combo ? COMBO.extraHitStopMs : 0));
-    shake(fam.shake * (ev.combo ? 1.35 : 1));
-    screenFlash(fam.flash + (ev.combo ? COMBO.flash : 0));
-    if (k === 0 && ev.combo && !big) {
+    stop(fam.hitStopMs + (moment(ev) ? COMBO.extraHitStopMs : 0));
+    shake(fam.shake * (moment(ev) ? 1.35 : 1));
+    screenFlash(fam.flash + (moment(ev) ? COMBO.flash : 0));
+    if (k === 0 && moment(ev) && !big) {
       info.combos++;
-      showBanner(ev.chain === data.rules.combo.at ? 'COMBO!' : `COMBO ×${ev.chain}`, color, 'combo');
+      showBanner(momentText(ev), color, 'combo');
       const t = foeFig(group[0]?.target);
       if (t && !skipping) rig.punch(chest(t), COMBO.punch);
     }
   }
 
+  // A combo moment: the shared 3rd-card combo, or (mode C) a spirit pair / straight.
+  const moment = (ev) => ev.combo || !!ev.spirit?.kind;
+  function momentText(ev) {
+    if (ev.spirit?.kind === 'pair') { info.spiritMoments++; return `PAIR +${ev.spirit.pct}%`; }
+    if (ev.spirit?.kind === 'straight') { info.spiritMoments++; return `STRAIGHT ×${ev.spirit.len}  +${ev.spirit.pct}%`; }
+    return ev.chain === data.rules.combo.at ? 'COMBO!' : `COMBO ×${ev.chain}`;
+  }
+
   function selfEffect(ev, card) {
     const color = card.look.color;
     const at = chest(hero);
-    if (ev.combo && !ev.hits.length && !skipping) {
+    if (moment(ev) && !ev.hits.length && !skipping) {
       // Block and buffs land the combo too: banner, flash, a bigger burst and a punch-in.
       info.combos++;
-      showBanner(`${ev.chain === data.rules.combo.at ? 'COMBO!' : `COMBO ×${ev.chain}`}`, color, 'combo');
+      showBanner(momentText(ev), color, 'combo');
       burst(['ring', 'sparks'], hero.group.position.clone().add(V(0, 0.4, 0)), color, { big: true });
       rig.punch(at, COMBO.punch);
       screenFlash(COMBO.flash);
@@ -361,6 +369,11 @@ export function createBattlePlayer({ data, pace, figures, stage, rig, vfx, camer
     if (ev.type === 'fightWon') return { dur: pace.fightGapMs, cues: [{ at: 0, fn: () => { if (pace.director && !info.cinematic) rig.release(); } }, { at: 250, fn: () => showBanner('Fight won', '#9fe89f', 'title') }] };
     if (ev.type === 'runEnd') {
       return { dur: 700, cues: [{ at: 0, fn: () => { if (ev.result === 'win') { hero.play('buff'); burst(['rise', 'ring'], hero.group.position, '#ffe27a'); } } }] };
+    }
+    if (ev.type === 'comboEnd') {
+      // Mode C: why the combo stopped. A timeout gets its own beat so it reads as a miss.
+      const text = { timeout: 'Too slow!', limit: `Full combo · ${ev.cards}`, empty: 'Hand empty' }[ev.reason];
+      return { dur: text ? 420 : 0, cues: [{ at: 0, fn: () => { info.comboEnds.push(ev.reason); if (text) showBanner(text, ev.reason === 'timeout' ? '#ff8a6a' : '#ffe08a', 'title'); } }] };
     }
     return { dur: 0, cues: [] }; // reward, picked: the mode view shows those
   }

@@ -12,7 +12,8 @@ import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:
 import { join } from 'node:path';
 import { FAST } from '../src/fast/data.js';
 import { PLAN } from '../src/plan/data.js';
-import { createRun, act } from '../src/core/sim.js';
+import { KAITOS } from '../src/kaitos/data.js';
+import { createRun, act, canPlay } from '../src/core/sim.js';
 import { botAction } from '../src/core/bot.js';
 import { digest } from '../src/core/rng.js';
 import { applyTune, applyDeck } from '../src/tune.js';
@@ -24,6 +25,7 @@ const URL_ARG = process.argv.find((a) => a.startsWith('--url='))?.slice(6);
 const ONLY = process.argv.find((a) => a.startsWith('--only='))?.slice(7);
 const SEED = 1;
 const LOSE_TUNE = 'hero.hp:14'; // a hero weak enough to fall, to check the Defeat path
+const KAITOS_DECK = 'strike,twin,sunder,guard,guard,jab'; // spirits 3,4,5 (a straight), 2,2 (a pair), 1
 const PLAN_DRAW_DECK = 'strike,focus,guard,jab,heavy,sweep,cry'; // seed 1 opens with jab, sweep, heavy, focus, cry; Focus draws strike + guard
 const FEEL_DECK = 'jab,jab,strike,verdict,guard'; // turn 1 = jab, jab, strike (combo), Final Verdict (finisher), Guard (block combo)
 
@@ -50,6 +52,23 @@ for (const seed of [SEED, 2, 3]) {
   const [x, y] = [botRun(FAST, seed), botRun(FAST, seed)];
   if (digest(x.events) !== digest(y.events)) failures.push(`[node] fast seed ${seed}: two runs differ`);
   else summaries.push(`[node] fast seed ${seed} run twice: identical (${x.result}, ${x.stats.map((s) => `${s.turns} turns`).join(' / ')})`);
+}
+
+// Mode C rules in Node: a finisher needs 3 cards first and ends the combo; a late pick times out.
+{
+  const d = applyDeck(KAITOS, 'verdict,strike,strike,strike,guard,guard');
+  const r = createRun(d, SEED);
+  const idx = (id) => r.fight.hand.findIndex((c) => c.id === id);
+  const early = canPlay(d, r, idx('verdict'));
+  for (let i = 0; i < 3; i++) act(d, r, { type: 'play', hand: idx('strike') >= 0 ? idx('strike') : idx('guard'), target: 0, atMs: i ? 500 : 0 });
+  const ready = canPlay(d, r, idx('verdict'));
+  const evs = act(d, r, { type: 'play', hand: idx('verdict'), target: 0, atMs: 500 });
+  const ended = evs.find((e) => e.type === 'comboEnd')?.reason;
+  const r2 = createRun(d, SEED);
+  act(d, r2, { type: 'play', hand: 1, target: 0, atMs: 0 });
+  const late = act(d, r2, { type: 'play', hand: 0, target: 0, atMs: d.rules.chain.pickMs + 1 }).find((e) => e.type === 'comboEnd')?.reason;
+  if (early || !ready || ended !== 'finisher' || late !== 'timeout') failures.push(`[node] mode C rules: finisher early ${early}, after 3 ${ready}, ends combo ${ended}; late pick ${late}`);
+  else summaries.push('[node] mode C rules: finisher locked until 3 cards, then ends the combo; a late pick times out');
 }
 
 let server;
@@ -180,7 +199,6 @@ async function walk(page, name, click, feetMin) {
   let s = await state(page);
   if (s.screen !== 'start') failures.push(`[${name}] expected the start screen, got ${s.screen}`);
   if (!(await page.isEnabled('.mode[data-mode="fast"]'))) failures.push(`[${name}] mode A button not enabled after loading`);
-  for (const m of ['kaitos']) if (await page.isEnabled(`.mode[data-mode="${m}"]`)) failures.push(`[${name}] mode ${m} should show as coming (disabled)`);
   await shot(page, name, '0-start');
   await click('.mode[data-mode="fast"]');
   s = await waitFor(page, name, 'the first hand', (x) => x.mode?.inputReady);
@@ -384,6 +402,112 @@ async function planDraw(page, name, click) {
   else summaries.push(`[${name}] Focus drew on queueing and locked; Sweep un-queued; matches Node (${digest(node.events)})`);
 }
 
+// ---- Mode C: Spirit Combo ----
+// A whole run with the bot, tapping each card exactly bot.delayMs after the last (the
+// game clock makes that exact), compared with Node.
+async function walkKaitos(page, name, click, feetMin) {
+  await advance(page, 100);
+  if (!(await page.isEnabled('.mode[data-mode="kaitos"]'))) failures.push(`[${name}] mode C button not enabled`);
+  await click('.mode[data-mode="kaitos"]');
+  let s = await waitFor(page, name, 'the first hand', (x) => x.mode?.inputReady);
+  checkFraming(name, s, feetMin);
+  if ((await page.locator('#hand .card').count()) !== KAITOS.rules.draw) failures.push(`[${name}] expected ${KAITOS.rules.draw} cards in hand`);
+  await shot(page, name, '1-hand');
+  const node = botRun(KAITOS, SEED);
+  let taps = 0;
+  let midShot = false;
+  for (let i = 0; i < 4000; i++) {
+    s = await state(page);
+    if (s.mode.result && !s.mode.busy) break;
+    if (s.mode.phase === 'reward' && !s.mode.busy) {
+      const a = await page.evaluate(() => window.__game.bot());
+      if (!taken.kreward) { taken.kreward = true; await shot(page, name, '4-reward'); }
+      await click(a.card ? `#reward-cards .card[data-card="${a.card}"]` : '#reward-skip');
+      taps++;
+      await advance(page, 100);
+      continue;
+    }
+    if (!s.mode.inputReady) {
+      await advance(page, 100);
+      if (await page.isEnabled('#skip')) await click('#skip');
+      continue;
+    }
+    const a = await page.evaluate(() => window.__game.bot());
+    taps++;
+    if (a.type === 'play') {
+      if (a.waitMs) await advance(page, a.waitMs);
+      if (!midShot && s.mode.played >= 2) { midShot = true; await shot(page, name, '2-mid-combo'); }
+      if (a.target !== null && a.target !== s.mode.target) await click(`.plate.foe[data-target="${a.target}"]`);
+      await click(`#hand .card[data-uid="${a.uid}"]`);
+    } else if (a.type === 'end') {
+      await click('#end-turn');
+      await advance(page, 60);
+    }
+  }
+  s = await waitFor(page, name, 'the result screen', (x) => x.mode.result && !x.mode.busy);
+  await advance(page, 300);
+  await shot(page, name, '5-result');
+  if (!(await page.isVisible('#run-end'))) failures.push(`[${name}] result panel not shown`);
+  const nodePicks = node.events.filter((e) => e.type === 'card').map((e) => e.pickMs).join();
+  if (s.mode.digest !== digest(node.events)) {
+    const evs = await page.evaluate(() => window.__game.events());
+    const i = evs.findIndex((e, k) => JSON.stringify(e) !== JSON.stringify(node.events[k]));
+    if (i >= 0) failures.push(`[${name}] first difference at event ${i}: browser ${JSON.stringify(evs[i]).slice(0, 300)} / Node ${JSON.stringify(node.events[i]).slice(0, 300)}`);
+  }
+  if (s.mode.digest !== digest(node.events)) failures.push(`[${name}] run differs from Node (browser ${s.mode.result} ${s.mode.digest}, Node ${node.result} ${digest(node.events)}; picks browser ${s.mode.picks.join()} / Node ${nodePicks})`);
+  else summaries.push(`[${name}] run combo'd to the end through the buttons (${taps} taps, picks ${KAITOS.bot.delayMs} ms apart): ${s.mode.result}, matches Node (${digest(node.events)})`);
+  summaries.push(`## ${name} result\n${await page.evaluate(() => window.__game.stateText())}`);
+}
+
+// Scripted picks on a fixed deck: a straight (3-4-5), a pair (2-2), the 5-card limit; then
+// next turn one card and a late pick (the timer runs out). Node replays the same picks.
+async function kaitosFeel(page, name, click) {
+  const data = applyDeck(KAITOS, KAITOS_DECK);
+  const GAP = 600; // ms between picks (36 frames: exact on the game clock)
+  let s = await waitFor(page, name, 'the first hand', (x) => x.mode?.inputReady);
+  const tap = async (id) => {
+    const uid = await page.evaluate((cname) => [...document.querySelectorAll('#hand .card')].find((e) => e.querySelector('.cname').textContent === cname)?.dataset.uid, data.cards[id].name);
+    if (!uid) return failures.push(`[${name}] ${id} not in hand`);
+    await click(`#hand .card[data-uid="${uid}"]`);
+  };
+  // Wait `ms` frame by frame (so a moment can be caught on screen), then pick `id`.
+  const waitTap = async (id, ms, shotName, when) => {
+    for (let f = 0; f < Math.round((ms * 60) / 1000); f++) {
+      await advance(page, 1000 / 60);
+      if (shotName && !taken[name + shotName]) {
+        const m = (await state(page)).mode;
+        if (when(m)) { taken[name + shotName] = true; await shot(page, name, shotName); }
+      }
+    }
+    await tap(id);
+  };
+  await tap('strike');
+  await waitTap('twin', GAP, '1-timer', (m) => m.comboOpen && m.timeLeft < 2200);
+  await waitTap('sunder', GAP);
+  await waitTap('guard', GAP, '2-straight', (m) => m.spiritMoments > 0 && m.hitStop);
+  await waitTap('guard', GAP);
+  s = await waitFor(page, name, 'the pair', (x) => x.mode.spiritMoments >= 2 && x.mode.hitStop, 10);
+  await shot(page, name, '3-pair');
+  s = await waitFor(page, name, 'turn 2', (x) => x.mode.inputReady && x.mode.turn === 2, 50);
+  if (!s.mode.comboEnds.includes('limit')) failures.push(`[${name}] 5 cards did not end the combo (ends: ${s.mode.comboEnds})`);
+  const first = s.mode.hand[0];
+  await tap(first);
+  for (let t = 0; t < KAITOS.rules.chain.pickMs + 400; t += 100) {
+    await advance(page, 100);
+    if (!taken[name + 'slow'] && (await state(page)).mode.comboEnds.includes('timeout')) { taken[name + 'slow'] = true; await advance(page, 120); await shot(page, name, '4-too-slow'); }
+  }
+  s = await waitFor(page, name, 'turn 3', (x) => x.mode.inputReady && x.mode.turn === 3, 50);
+  if (!s.mode.comboEnds.includes('timeout')) failures.push(`[${name}] the timer did not end the combo`);
+  const node = createRun(data, SEED);
+  const pickN = (id, atMs) => act(data, node, { type: 'play', hand: node.fight.hand.findIndex((c) => c.id === id), target: 0, atMs });
+  pickN('strike', 0);
+  for (const id of ['twin', 'sunder', 'guard', 'guard']) pickN(id, GAP);
+  pickN(first, 0);
+  act(data, node, { type: 'end', reason: 'timeout' });
+  if (s.mode.digest !== digest(node.events)) failures.push(`[${name}] scripted combo differs from Node (browser ${s.mode.digest}, Node ${digest(node.events)})`);
+  else summaries.push(`[${name}] straight 3-4-5 and pair 2-2 paid, 5 cards ended the combo, a late pick timed out; matches Node (${digest(node.events)})`);
+}
+
 const DEVICES = {
   laptop: [{ viewport: { width: 1280, height: 720 } }, (page) => (sel) => page.click(sel), -0.45],
   phone: [{ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }, (page) => (sel) => page.tap(sel), -0.45],
@@ -394,6 +518,8 @@ for (const [name, [opts, input, feetMin]] of Object.entries(DEVICES)) {
   await run(`${name}-defeat`, opts, (page) => tunedLoss(page, `${name}-defeat`, input(page)), `&mode=fast&tune=${LOSE_TUNE}`);
   await run(`${name}-plan`, opts, (page) => walkPlan(page, `${name}-plan`, input(page), feetMin));
   await run(`${name}-plan-draw`, opts, (page) => planDraw(page, `${name}-plan-draw`, input(page)), `&mode=plan&deck=${PLAN_DRAW_DECK}`);
+  await run(`${name}-kaitos`, opts, (page) => walkKaitos(page, `${name}-kaitos`, input(page), feetMin));
+  await run(`${name}-kaitos-feel`, opts, (page) => kaitosFeel(page, `${name}-kaitos-feel`, input(page)), `&mode=kaitos&deck=${KAITOS_DECK}`);
 }
 await run('laptop-debug', DEVICES.laptop[0], (page) => debugOverlay(page, 'laptop-debug'), '&debug');
 

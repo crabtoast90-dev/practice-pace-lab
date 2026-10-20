@@ -3,10 +3,10 @@
 // the fight), scores where each order leaves the fight, and plays the first card of the
 // best one; then it plans again (so drawn cards count). Its weights live in each mode's
 // data file under bot (ask for changes by name).
-import { resolveCard, intentDamage, cardDraw } from './sim.js';
+import { resolveCard, intentDamage, cardDraw, playable } from './sim.js';
 
 function copyFight(f) {
-  return { ...f, hero: { ...f.hero }, enemies: f.enemies.map((e) => ({ ...e })), hand: f.hand.slice(), drawn: f.drawn ?? 0 };
+  return { ...f, hero: { ...f.hero }, enemies: f.enemies.map((e) => ({ ...e })), hand: f.hand.slice(), spirits: (f.spirits ?? []).slice(), drawn: f.drawn ?? 0 };
 }
 
 function score(data, f0, f) {
@@ -39,21 +39,22 @@ function plan(data, f0) {
     const tried = new Set();
     for (let h = 0; h < f.hand.length; h++) {
       const card = data.cards[f.hand[h].id];
-      if (card.cost > f.energy || tried.has(card.id)) continue;
+      if (!playable(data, f, card) || tried.has(card.id)) continue;
       tried.add(card.id);
       const targets = card.dmg && !card.all ? f.enemies.filter((e) => e.alive).map((e) => e.i) : [Math.max(0, f.enemies.findIndex((e) => e.alive))];
       for (const t of targets) {
         const g = copyFight(f);
         g.hand.splice(h, 1);
-        g.energy -= card.cost;
+        if (!data.rules.chain) g.energy -= card.cost;
         g.drawn += cardDraw(data, g, card);
         resolveCard(data, g, card, t);
         g.played++;
+        g.spirits.push(card.spirit);
         const action = first ?? { type: 'play', hand: h, target: t };
         const sc = score(data, f0, g);
         if (sc > best.score + 1e-9) best = { score: sc, action };
         const key = `${g.hand.map((c) => c.id).sort()}|${g.energy}|${g.enemies.map((e) => `${e.hp}.${e.block}.${e.exposed}`)}|${g.hero.block}.${g.hero.str}|${action.hand}.${action.target}`;
-        if (seen.has(key) || g.enemies.every((e) => !e.alive)) continue;
+        if (seen.has(key) || g.enemies.every((e) => !e.alive) || (data.rules.chain && card.family === 'finisher')) continue; // a finisher ends C's combo
         seen.add(key);
         dfs(g, action);
       }
@@ -69,5 +70,10 @@ export function botAction(data, run) {
     return { type: 'pick', card: (data.bot.pick[pick] ?? 0) >= data.bot.pickMin ? pick : null };
   }
   if (run.phase !== 'fight') return null;
-  return plan(data, run.fight).action ?? { type: 'end' };
+  const ch = data.rules.chain;
+  // Mode C: the bot takes bot.delayMs to pick each card after the first; slower than the timer = the combo ends.
+  if (ch && run.fight.played > 0 && data.bot.delayMs > ch.pickMs) return { type: 'end', reason: 'timeout' };
+  const a = plan(data, run.fight).action ?? { type: 'end' };
+  if (ch && a.type === 'play') a.atMs = run.fight.played > 0 ? data.bot.delayMs : 0;
+  return a;
 }

@@ -101,6 +101,7 @@ function startTurn(data, run) {
   f.hero.block = 0;
   f.energy = data.rules.energy;
   f.played = 0;
+  f.spirits = []; // mode C: the spirit numbers played so far this turn
   drawCards(data, run, data.rules.draw);
   emit(run, { type: 'turnStart', turn: f.turn, hand: f.hand.map((c) => ({ ...c })), drawPile: f.draw.length, discardPile: f.discard.length, snap: snap(data, f) });
 }
@@ -110,12 +111,29 @@ function startTurn(data, run) {
 // The combo reward this card's family gets if it is played now (rules.combo.bonus).
 export const comboBonus = (data, card, playedBefore) => (playedBefore + 1 >= data.rules.combo.at ? data.rules.combo.bonus[card.family] ?? {} : {});
 
+// Mode C (rules.spirit): the bonus a card's spirit number earns against the cards played
+// before it this turn. Same number as the last card = a pair; continuing a run of
+// consecutive numbers (up or down) to straightMin or longer = a straight, worth more the
+// longer it runs. { kind: 'pair' | 'straight' | null, pct, len }
+export function spiritBonus(data, f, card) {
+  const sp = data.rules.spirit;
+  const s = f.spirits ?? [];
+  if (!sp || !s.length) return { kind: null, pct: 0, len: 0 };
+  const last = s[s.length - 1];
+  if (card.spirit === last) return { kind: 'pair', pct: sp.pairPct, len: 2 };
+  const dir = card.spirit - last;
+  if (Math.abs(dir) !== 1) return { kind: null, pct: 0, len: 0 };
+  let len = 2;
+  for (let i = s.length - 1; i > 0 && s[i] - s[i - 1] === dir; i--) len++;
+  return len >= sp.straightMin ? { kind: 'straight', pct: sp.straightPct * (len - sp.straightMin + 1), len } : { kind: null, pct: 0, len };
+}
+
 export function cardDamage(data, f, card, playedBefore = f.played) {
   if (!card.dmg) return 0;
   const d = card.dmg + (card.perCard ?? 0) * playedBefore + f.hero.str;
-  return Math.floor(d * (1 + (comboBonus(data, card, playedBefore).dmgPct ?? 0) / 100));
+  return Math.floor(d * (1 + ((comboBonus(data, card, playedBefore).dmgPct ?? 0) + spiritBonus(data, f, card).pct) / 100));
 }
-export const cardBlock = (data, f, card, playedBefore = f.played) => (card.block ? Math.floor(card.block * (1 + (comboBonus(data, card, playedBefore).blockPct ?? 0) / 100)) : 0);
+export const cardBlock = (data, f, card, playedBefore = f.played) => (card.block ? Math.floor(card.block * (1 + ((comboBonus(data, card, playedBefore).blockPct ?? 0) + spiritBonus(data, f, card).pct) / 100)) : 0);
 export const cardStr = (data, f, card, playedBefore = f.played) => (card.str ? card.str + (comboBonus(data, card, playedBefore).str ?? 0) : 0);
 export const cardDraw = (data, f, card, playedBefore = f.played) => (card.draw ? card.draw + (comboBonus(data, card, playedBefore).draw ?? 0) : 0);
 
@@ -125,7 +143,10 @@ const firstAlive = (f) => f.enemies.findIndex((e) => e.alive);
 // drawing is left to the caller because a reshuffle needs the run's random numbers.
 export function resolveCard(data, f, card, target) {
   const out = { hits: [], block: 0, str: 0, expose: 0, broke: 0, combo: f.played + 1 >= data.rules.combo.at, chain: f.played + 1 };
-  if (!(f.enemies[target]?.alive)) target = firstAlive(f);
+  if (data.rules.spirit) out.spirit = spiritBonus(data, f, card);
+  // Cards that don't aim at one skeleton ignore the selection (it would only be noise in the events).
+  const aims = (card.dmg && !card.all) || card.expose || card.breakBlock;
+  if (!aims || !(f.enemies[target]?.alive)) target = firstAlive(f);
   const perHit = cardDamage(data, f, card);
   if (card.breakBlock && target >= 0) {
     out.broke = f.enemies[target].block;
@@ -151,29 +172,54 @@ export function resolveCard(data, f, card, target) {
   return out;
 }
 
+// Can this card be played now? Energy in A and B; in C (rules.chain) the combo limit,
+// and finishers need finisherMin cards before them.
+export function playable(data, f, card) {
+  const ch = data.rules.chain;
+  if (!ch) return card.cost <= f.energy;
+  if (f.played >= ch.limit) return false;
+  return card.family !== 'finisher' || f.played >= ch.finisherMin;
+}
+
 export function canPlay(data, run, handIndex) {
   const f = run.fight;
   const c = f?.hand[handIndex];
-  return run.phase === 'fight' && !!c && data.cards[c.id].cost <= f.energy;
+  return run.phase === 'fight' && !!c && playable(data, f, data.cards[c.id]);
 }
 
-function play(data, run, handIndex, target) {
+// After a card in mode C: does the combo end by itself? (finisher, limit, empty hand)
+function chainOver(data, f, card) {
+  const ch = data.rules.chain;
+  if (!ch) return null;
+  if (card.family === 'finisher' && ch.finisherEnds) return 'finisher';
+  if (f.played >= ch.limit) return 'limit';
+  if (!f.hand.length) return 'empty';
+  return null;
+}
+
+function play(data, run, handIndex, target, atMs) {
   const f = run.fight;
   const [inst] = f.hand.splice(handIndex, 1);
   const card = data.cards[inst.id];
-  f.energy -= card.cost;
+  if (!data.rules.chain) f.energy -= card.cost;
   const drawN = cardDraw(data, f, card);
   const r = resolveCard(data, f, card, target);
+  if (data.rules.chain) r.pickMs = atMs ?? 0; // how long the player took to pick it (mode C)
   f.played++;
+  f.spirits.push(card.spirit);
   f.families[card.family] = (f.families[card.family] ?? 0) + 1;
   f.discard.push(inst);
   const drew = drawN ? drawCards(data, run, drawN).map((c) => ({ ...c })) : [];
   emit(run, { type: 'card', uid: inst.uid, id: inst.id, family: card.family, ...r, drew, snap: snap(data, f) });
-  if (f.enemies.every((e) => !e.alive)) winFight(data, run);
+  if (f.enemies.every((e) => !e.alive)) return winFight(data, run);
+  const over = chainOver(data, f, card);
+  if (over) endTurn(data, run, over);
 }
 
-function endTurn(data, run) {
+// reason (mode C only): why the combo ended: finisher, limit, empty, timeout or stop.
+function endTurn(data, run, reason) {
   const f = run.fight;
+  if (data.rules.chain) emit(run, { type: 'comboEnd', reason: reason ?? 'stop', cards: f.played, spirits: f.spirits.slice() });
   f.discard.push(...f.hand.splice(0));
   for (const e of f.enemies) {
     if (!e.alive) continue;
@@ -233,8 +279,11 @@ function loseRun(data, run) {
 // Apply one player action. Returns the events it caused (also kept in run.events).
 export function act(data, run, action) {
   const before = run.events.length;
-  if (action.type === 'play' && canPlay(data, run, action.hand)) play(data, run, action.hand, action.target ?? 0);
-  else if (action.type === 'end' && run.phase === 'fight') endTurn(data, run);
+  const ch = data.rules.chain;
+  // Mode C: a pick that came after the timer ran out ends the combo instead.
+  if (action.type === 'play' && ch && run.phase === 'fight' && run.fight.played > 0 && (action.atMs ?? 0) > ch.pickMs) endTurn(data, run, 'timeout');
+  else if (action.type === 'play' && canPlay(data, run, action.hand)) play(data, run, action.hand, action.target ?? 0, action.atMs);
+  else if (action.type === 'end' && run.phase === 'fight') endTurn(data, run, action.reason);
   else if (action.type === 'pick' && run.phase === 'reward') {
     if (action.card && run.reward.includes(action.card)) run.deck.push(newCard(run, action.card));
     emit(run, { type: 'picked', card: action.card && run.reward.includes(action.card) ? action.card : null });
