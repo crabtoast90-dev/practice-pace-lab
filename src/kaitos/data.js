@@ -8,8 +8,10 @@ export const KAITOS = {
   mode: 'kaitos',
   hero: HERO,
   cards: CARDS,
-  starterDeck: STARTER_DECK,
-  rewardPool: REWARD_POOL,
+  // Brian, 2026-10-20: the starting deck doubled (so pairs happen again), plus the Burn and
+  // Haste cards, two copies each.
+  starterDeck: [...STARTER_DECK, ...STARTER_DECK, 'ember', 'ember', 'wildfire', 'wildfire', 'quickstep', 'quickstep', 'rush', 'rush'],
+  rewardPool: [...REWARD_POOL, 'ember', 'wildfire', 'quickstep', 'rush'],
   enemies: ENEMIES,
   fights: FIGHTS,
 
@@ -25,7 +27,8 @@ export const KAITOS = {
     // The combo: up to `limit` cards a turn. The first has no timer; each next card must be
     // picked within pickMs of the one before (?tune=rules.chain.pickMs:3000). Finishers need
     // finisherMin cards before them and end the combo. An empty hand ends it too.
-    chain: { limit: 5, pickMs: 5000, finisherMin: 3, finisherEnds: true }, // pickMs 2500 -> 5000: Brian, 2026-10-20
+    // pickMs 2500 -> 5000 and drawOnPlay (each card played draws its replacement): Brian, 2026-10-20.
+    chain: { limit: 5, pickMs: 5000, finisherMin: 3, finisherEnds: true, drawOnPlay: 1 },
     // Spirit numbers: a card matching the last card's number (a pair) or continuing a run of
     // consecutive numbers, up or down, to 3+ (a straight) gets extra damage and block:
     // pair +pairPct %; straight +straightPct % at 3 cards, x2 at 4, x3 at 5.
@@ -60,9 +63,10 @@ export const KAITOS = {
     blockWeight: 1.3,
     drawValue: 5,
     exposeValue: 6,
+    burnValue: 2, // per Burn stack added
     strTurnsDiv: 18,
     pickMin: 3,
-    pick: { heavy: 9, whirl: 8, verdict: 8, twin: 7, cry: 7, sweep: 6, bash: 6, wall: 6, comet: 6, sunder: 5, focus: 5, jab: 4 },
+    pick: { heavy: 9, whirl: 8, verdict: 8, twin: 7, cry: 7, sweep: 6, bash: 6, wall: 6, comet: 6, sunder: 5, focus: 5, jab: 4, wildfire: 7, ember: 6, rush: 6, quickstep: 5 },
   },
 
   // On screen only (the sim ignores these). Milliseconds.

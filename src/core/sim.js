@@ -54,7 +54,7 @@ export function snap(data, f) {
   return {
     hero: { ...f.hero },
     energy: f.energy,
-    enemies: f.enemies.map((e) => ({ hp: e.hp, block: e.block, str: e.str, exposed: e.exposed, alive: e.alive, intent: e.alive ? intentOf(data, e) : null })),
+    enemies: f.enemies.map((e) => ({ hp: e.hp, block: e.block, str: e.str, exposed: e.exposed, burn: e.burn, alive: e.alive, intent: e.alive ? intentOf(data, e) : null })),
   };
 }
 
@@ -66,7 +66,7 @@ function startFight(data, run) {
     hero: { hp: run.hp, block: 0, str: 0 },
     enemies: spec.enemies.map((key, i) => {
       const e = data.enemies[key];
-      return { i, key, name: e.name, hp: e.hp, maxHp: e.hp, block: 0, str: 0, exposed: 0, alive: true, move: Math.floor(rand(run) * e.moves.length) };
+      return { i, key, name: e.name, hp: e.hp, maxHp: e.hp, block: 0, str: 0, exposed: 0, burn: 0, alive: true, move: Math.floor(rand(run) * e.moves.length) };
     }),
     draw: shuffle(run, run.deck),
     discard: [],
@@ -112,6 +112,7 @@ function startTurn(data, run) {
   f.energy = data.rules.energy;
   f.played = 0;
   f.spirits = []; // mode C: the spirit numbers played so far this turn
+  f.haste = 0; // mode C: extra combo cards this turn (Haste)
   drawCards(data, run, data.rules.draw);
   emit(run, { type: 'turnStart', turn: f.turn, hand: f.hand.map((c) => ({ ...c })), drawPile: f.draw.length, discardPile: f.discard.length, snap: snap(data, f) });
 }
@@ -136,6 +137,13 @@ export function spiritBonus(data, f, card) {
   let len = 2;
   for (let i = s.length - 1; i > 0 && s[i] - s[i - 1] === dir; i--) len++;
   return len >= sp.straightMin ? { kind: 'straight', pct: sp.straightPct * (len - sp.straightMin + 1), len } : { kind: null, pct: 0, len };
+}
+
+export function cardBurn(data, f, card) {
+  if (!card.burn) return 0;
+  const sb = spiritBonus(data, f, card);
+  const straight = sb.kind === 'straight';
+  return card.burn * (straight ? card.burnStraightMult ?? 1 : 1) + (straight ? (card.burnPerStraight ?? 0) * sb.len : 0);
 }
 
 export function cardDamage(data, f, card, playedBefore = f.played) {
@@ -178,6 +186,15 @@ export function resolveCard(data, f, card, target) {
   if (card.block) f.hero.block += (out.block = cardBlock(data, f, card));
   if (card.str) f.hero.str += (out.str = cardStr(data, f, card));
   if (card.expose && f.enemies[target]?.alive) f.enemies[target].exposed = Math.max(f.enemies[target].exposed, (out.expose = card.expose));
+  // Burn (mode C keyword): stacks on the target (or every skeleton), ticking at the start of
+  // the skeletons' turn. Bigger in a straight: x burnStraightMult, or +burnPerStraight per card in it.
+  const burn = cardBurn(data, f, card);
+  if (burn) {
+    out.burn = burn;
+    for (const e of card.burnAll ? f.enemies : [f.enemies[target]]) if (e?.alive) e.burn += burn;
+  }
+  // Haste (mode C keyword): this combo may run longer.
+  if (card.haste) f.haste = (f.haste ?? 0) + (out.haste = card.haste);
   out.target = target;
   return out;
 }
@@ -187,7 +204,7 @@ export function resolveCard(data, f, card, target) {
 export function playable(data, f, card) {
   const ch = data.rules.chain;
   if (!ch) return card.cost <= f.energy;
-  if (f.played >= ch.limit) return false;
+  if (f.played >= ch.limit + (f.haste ?? 0)) return false;
   return card.family !== 'finisher' || f.played >= ch.finisherMin;
 }
 
@@ -202,7 +219,7 @@ function chainOver(data, f, card) {
   const ch = data.rules.chain;
   if (!ch) return null;
   if (card.family === 'finisher' && ch.finisherEnds) return 'finisher';
-  if (f.played >= ch.limit) return 'limit';
+  if (f.played >= ch.limit + (f.haste ?? 0)) return 'limit';
   if (!f.hand.length) return 'empty';
   return null;
 }
@@ -219,7 +236,8 @@ function play(data, run, handIndex, target, atMs) {
   f.spirits.push(card.spirit);
   f.families[card.family] = (f.families[card.family] ?? 0) + 1;
   f.discard.push(inst);
-  const drew = drawN ? drawCards(data, run, drawN).map((c) => ({ ...c })) : [];
+  const refill = data.rules.chain?.drawOnPlay ?? 0; // mode C: every card played draws its replacement
+  const drew = drawN + refill ? drawCards(data, run, drawN + refill).map((c) => ({ ...c })) : [];
   emit(run, { type: 'card', uid: inst.uid, id: inst.id, family: card.family, ...r, drew, snap: snap(data, f) });
   if (f.enemies.every((e) => !e.alive)) return winFight(data, run);
   const over = chainOver(data, f, card);
@@ -231,6 +249,19 @@ function endTurn(data, run, reason) {
   const f = run.fight;
   if (data.rules.chain) emit(run, { type: 'comboEnd', reason: reason ?? 'stop', cards: f.played, spirits: f.spirits.slice() });
   f.discard.push(...f.hand.splice(0));
+  // Burn ticks first: each burning skeleton takes its stacks (through block), then loses one.
+  if (f.enemies.some((e) => e.alive && e.burn > 0)) {
+    const hits = [];
+    for (const e of f.enemies) {
+      if (!e.alive || !e.burn) continue;
+      e.hp = Math.max(0, e.hp - e.burn);
+      if (!e.hp) e.alive = false;
+      hits.push({ target: e.i, amount: e.burn, hpLeft: e.hp, killed: !e.alive });
+      e.burn--;
+    }
+    emit(run, { type: 'burn', hits, snap: snap(data, f) });
+    if (f.enemies.every((e) => !e.alive)) return winFight(data, run);
+  }
   for (const e of f.enemies) {
     if (!e.alive) continue;
     e.block = 0;

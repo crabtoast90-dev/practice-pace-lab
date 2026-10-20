@@ -169,3 +169,15 @@ body.in-mode #credits { display: none; }
 #chain.spirits { display: inline-flex; gap: 4px; background: none; padding: 0; }
 #chain.spirits i { font: 800 15px system-ui; font-style: normal; width: 26px; height: 26px; border-radius: 13px; display: inline-flex; align-items: center; justify-content: center; background: radial-gradient(circle at 40% 35%, #e8d4ff, #7a4ad8); color: #1a0a3a; }
 @media (max-width: 640px) { .sb { font-size: 8.5px; } #timer { height: 16px; } #timer-text { line-height: 16px; font-size: 11px; } }
+
+/* mode C keywords */
+.kw { font: 800 10px system-ui; letter-spacing: 0.5px; text-transform: uppercase; padding: 0 4px; border-radius: 4px; }
+.kw.burn { background: #8a2a0a; color: #ffb27a; }
+.kw.haste { background: #3a5a0a; color: #e0ff9a; }
+.tag.burn { background: #a0400f; }
+.num.burn { color: #ff8a3a; font-size: 22px; }
+.num.burn.big-ish { font-size: 32px; }
+.num.haste { color: #d8ff7a; font-size: 20px; }
+.orb.hasted { box-shadow: 0 0 14px #c8ff6a; background: radial-gradient(circle at 40% 35%, #f0ffb0, #7ab81a); }
+@media (max-width: 640px) { .kw { font-size: 8.5px; } }
+@media (max-width: 640px) { .hud.kaitos .ctext { font-size: 9px; line-height: 1.15; } .hud.kaitos .ctext b { font-size: 10.5px; } .hud.kaitos .cname { font-size: 10.5px; } }

@@ -26,6 +26,7 @@ const ONLY = process.argv.find((a) => a.startsWith('--only='))?.slice(7);
 const SEED = 1;
 const LOSE_TUNE = 'hero.hp:14'; // a hero weak enough to fall, to check the Defeat path
 const KAITOS_DECK = 'guard,strike,guard,twin,strike,jab'; // dealt spirits: guard 1, strike 2, guard 3, twin 4, strike 4, jab 1
+const KEYWORD_DECK = 'strike,quickstep,rush,sunder,ember,wildfire'; // spirits 2,3,4,5,6,7: one long straight
 const PLAN_DRAW_DECK = 'strike,focus,guard,jab,heavy,sweep,cry'; // seed 1 opens with jab, sweep, heavy, focus, cry; Focus draws strike + guard
 const FEEL_DECK = 'jab,jab,strike,verdict,guard'; // turn 1 = jab, jab, strike (combo), Final Verdict (finisher), Guard (block combo)
 
@@ -509,6 +510,40 @@ async function kaitosFeel(page, name, click) {
   else summaries.push(`[${name}] straight 1-2-3-4 and pair 4-4 paid, 5 cards ended the combo, a late pick timed out; matches Node (${digest(node.events)})`);
 }
 
+// Burn and Haste: Strike 2, Quickstep 3 (Haste 1), Tempo Rush 4 (Haste 2), Sunder 5, Ember Cut 6
+// (Burn x2 in a straight), Wildfire 7 (Burn to all, +2 per straight card): a 6-card straight
+// past the base limit of 5. End the combo; Burn ticks first in the skeletons' turn.
+async function kaitosKeywords(page, name, click) {
+  const data = applyDeck(KAITOS, KEYWORD_DECK);
+  const GAP = 600;
+  let s = await waitFor(page, name, 'the first hand', (x) => x.mode?.inputReady);
+  const order = ['strike', 'quickstep', 'rush', 'sunder', 'ember', 'wildfire'];
+  for (const [k, id] of order.entries()) {
+    if (k) await advance(page, GAP);
+    const uid = await page.evaluate((cname) => [...document.querySelectorAll('#hand .card')].find((e) => e.querySelector('.cname').textContent === cname)?.dataset.uid, data.cards[id].name);
+    if (!uid) { failures.push(`[${name}] ${id} not in hand (hand ${(await state(page)).mode.hand})`); return; }
+    await click(`#hand .card[data-uid="${uid}"]`);
+    if (id === 'rush') await shot(page, name, '1-haste'); // no clock step: the next pick must stay exactly GAP later
+  }
+  s = await state(page);
+  if (s.mode.haste !== 3 || s.mode.played !== 6 || !s.mode.comboOpen) failures.push(`[${name}] Haste should allow a 6th card and more (haste ${s.mode.haste}, played ${s.mode.played}, open ${s.mode.comboOpen})`);
+  const burns = s.mode.burns.join('/');
+  s = await waitFor(page, name, 'the Wildfire', (x) => x.mode.lastCard === 'wildfire' && x.mode.hitStop, 10);
+  await advance(page, 120);
+  await shot(page, name, '2-wildfire');
+  await click('#end-turn');
+  s = await waitFor(page, name, 'the Burn tick', (x) => x.mode.lastEvent === 'burn' && x.mode.hitStop, 10);
+  await shot(page, name, '3-burn-tick');
+  s = await waitFor(page, name, 'turn 2', (x) => x.mode.inputReady && x.mode.turn === 2, 50);
+  const node = createRun(data, SEED);
+  for (const [k, id] of order.entries()) act(data, node, { type: 'play', hand: node.fight.hand.findIndex((c) => c.id === id), target: 0, atMs: k ? GAP : 0 });
+  act(data, node, { type: 'end', reason: 'stop' });
+  const want = `${6 + 14}/14`; // Ember 3 x2 on the target, Wildfire 2 + 2 x 6 straight cards on all
+  if (burns !== want) failures.push(`[${name}] Burn stacks ${burns}, expected ${want}`);
+  if (s.mode.digest !== digest(node.events)) failures.push(`[${name}] keyword run differs from Node (browser ${s.mode.digest}, Node ${digest(node.events)})`);
+  else summaries.push(`[${name}] Haste took the combo to 6 cards, a 2-7 straight stacked Burn ${burns}, Burn ticked first in the skeletons' turn; matches Node (${digest(node.events)})`);
+}
+
 const DEVICES = {
   laptop: [{ viewport: { width: 1280, height: 720 } }, (page) => (sel) => page.click(sel), -0.45],
   phone: [{ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }, (page) => (sel) => page.tap(sel), -0.45],
@@ -520,6 +555,7 @@ for (const [name, [opts, input, feetMin]] of Object.entries(DEVICES)) {
   await run(`${name}-plan`, opts, (page) => walkPlan(page, `${name}-plan`, input(page), feetMin));
   await run(`${name}-plan-draw`, opts, (page) => planDraw(page, `${name}-plan-draw`, input(page)), `&mode=plan&deck=${PLAN_DRAW_DECK}`);
   await run(`${name}-kaitos`, opts, (page) => walkKaitos(page, `${name}-kaitos`, input(page), feetMin));
+  await run(`${name}-kaitos-keywords`, opts, (page) => kaitosKeywords(page, `${name}-kaitos-keywords`, input(page)), `&mode=kaitos&deck=${KEYWORD_DECK}`);
   await run(`${name}-kaitos-feel`, opts, (page) => kaitosFeel(page, `${name}-kaitos-feel`, input(page)), `&mode=kaitos&deck=${KAITOS_DECK}`);
 }
 await run('laptop-debug', DEVICES.laptop[0], (page) => debugOverlay(page, 'laptop-debug'), '&debug');

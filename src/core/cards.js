@@ -38,6 +38,12 @@ export const CARDS = {
   // finisher (mode A: a 2 s cinematic; mode C: needs 3+ cards before it and ends the combo)
   verdict: { id: 'verdict', name: 'Final Verdict', family: 'finisher', cost: 1, spirit: 9, dmg: 6, perCard: 4, look: { color: '#fff3a0', ms: 2000 } },
   comet: { id: 'comet', name: 'Skyfall', family: 'finisher', cost: 2, spirit: 9, dmg: 4, perCard: 3, all: true, look: { color: '#ff7ad9', ms: 2000 } },
+  // Mode C keywords (only C's deck and rewards hold these). Burn: stacks that tick at the start
+  // of the skeletons' turn (through block), then drop by 1. Haste: +N cards to this combo's limit.
+  ember: { id: 'ember', name: 'Ember Cut', family: 'light', cost: 1, spirit: 6, dmg: 3, burn: 3, burnStraightMult: 2, look: { color: '#ff7a2a', ms: 560 } },
+  wildfire: { id: 'wildfire', name: 'Wildfire', family: 'area', cost: 2, spirit: 7, burn: 2, burnAll: true, burnPerStraight: 2, look: { color: '#ff4a1a', ms: 720 } },
+  quickstep: { id: 'quickstep', name: 'Quickstep', family: 'light', cost: 0, spirit: 3, dmg: 4, haste: 1, look: { color: '#7af0ff', ms: 440 } },
+  rush: { id: 'rush', name: 'Tempo Rush', family: 'buff', cost: 1, spirit: 4, haste: 2, look: { color: '#c8ff6a', ms: 500 } },
 };
 
 export const STARTER_DECK = ['strike', 'strike', 'strike', 'strike', 'strike', 'guard', 'guard', 'guard', 'guard', 'chop'];

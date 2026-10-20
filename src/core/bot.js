@@ -22,6 +22,7 @@ function score(data, f0, f) {
     if (e.alive) {
       incoming += intentDamage(data, e);
       if (e.exposed > e0.exposed) s += w.exposeValue;
+      s += (e.burn - (e0.burn ?? 0)) * (w.burnValue ?? 0);
     }
   }
   if (f.enemies.every((e) => !e.alive)) s += 1000;

@@ -84,8 +84,9 @@ function section(title, data, m) {
   b();
   b('card | family | cost | offered | picked | played (all runs)');
   b('--- | --- | --- | --- | --- | ---');
-  for (const c of Object.values(data.cards)) b(`${c.name} | ${c.family} | ${c.cost} | ${m.offers[c.id] ?? (data.starterDeck.includes(c.id) ? 'starter' : 0)} | ${m.picks[c.id] ?? '-'} | ${m.plays[c.id] ?? 0}`);
-  const unused = Object.values(data.cards).filter((c) => !m.plays[c.id]);
+  const used = Object.values(data.cards).filter((c) => data.starterDeck.includes(c.id) || data.rewardPool.includes(c.id));
+  for (const c of used) b(`${c.name} | ${c.family} | ${c.cost} | ${m.offers[c.id] ?? (data.starterDeck.includes(c.id) ? 'starter' : 0)} | ${m.picks[c.id] ?? '-'} | ${m.plays[c.id] ?? 0}`);
+  const unused = used.filter((c) => !m.plays[c.id]);
   b();
   b(`- ${unused.length ? `Never played: ${unused.map((c) => c.name).join(', ')}.` : 'Every card was played at least once.'}`);
   return { head, body };

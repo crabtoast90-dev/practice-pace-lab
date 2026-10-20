@@ -106,7 +106,7 @@ export function createBattlePlayer({ data, pace, figures, stage, rig, vfx, camer
     cache.set(el, html);
     el.querySelector(key).innerHTML = html;
   }
-  const tags = (u) => [u.block ? `<span class="tag blk">${u.block} block</span>` : '', u.str ? `<span class="tag str">+${u.str} str</span>` : '', u.exposed ? `<span class="tag exp">exposed ${u.exposed}</span>` : ''].join('');
+  const tags = (u) => [u.block ? `<span class="tag blk">${u.block} block</span>` : '', u.str ? `<span class="tag str">+${u.str} str</span>` : '', u.exposed ? `<span class="tag exp">exposed ${u.exposed}</span>` : '', u.burn ? `<span class="tag burn">burn ${u.burn}</span>` : ''].join('');
   function intentHtml(m) {
     if (!m) return '';
     const parts = [];
@@ -238,7 +238,8 @@ export function createBattlePlayer({ data, pace, figures, stage, rig, vfx, camer
     }
     if (ev.block) { burst(['bubble'], at, color); number(at, `+${ev.block} block`, ev.combo ? 'blk combo' : 'blk'); }
     if (ev.str) { burst(['rise'], hero.group.position, color); number(at, `+${ev.str} strength`, ev.combo ? 'buf combo' : 'buf'); }
-    if (ev.drew?.length) { burst(['rise'], hero.group.position, color); number(at, `draw ${ev.drew.length}`, 'buf'); }
+    if (ev.drew?.length && data.cards[ev.id].draw) { burst(['rise'], hero.group.position, color); number(at, `draw ${ev.drew.length}`, 'buf'); }
+    if (ev.haste) { burst(['rise', 'ring'], hero.group.position, '#c8ff6a'); number(at, `+${ev.haste} combo`, 'haste'); }
     glow(hero, color, 0.06, 200);
   }
 
@@ -287,6 +288,8 @@ export function createBattlePlayer({ data, pace, figures, stage, rig, vfx, camer
     }
     groups.forEach((g, k) => cue(hitAt + k * fam.gapMs, () => impact(ev, card, fam, g, k, big)));
     if (!ev.hits.length || (ev.block && !ev.hits.length)) cue(hitAt, () => selfEffect(ev, card));
+    if (ev.burn) cue(lastHit + 1, () => burnApplied(ev, card));
+    if (ev.haste && ev.hits.length) cue(lastHit + 1, () => { number(chest(hero), `+${ev.haste} combo`, 'haste'); burst(['ring'], hero.group.position, '#c8ff6a'); });
     cue(lastHit + 1, () => applySnap(ev.snap));
     if (big) {
       cue(M * fam.returnAt, () => tween(hero, hero.home, M * (fam.releaseAt - fam.returnAt)));
@@ -296,6 +299,37 @@ export function createBattlePlayer({ data, pace, figures, stage, rig, vfx, camer
       cue(Math.max(lastHit + 60, M - back), () => tween(hero, hero.home, back));
     }
     return { cues, dur: Math.max(M, lastHit + 80) + (pace.cardGapMs ?? 0) };
+  }
+
+  // Burn landing on its targets (mode C).
+  function burnApplied(ev, card) {
+    const targets = card.burnAll ? ev.snap.enemies.map((e, i) => (e.alive ? i : -1)).filter((i) => i >= 0) : [ev.target];
+    for (const i of targets) {
+      const f = foeFig(i);
+      if (!f) continue;
+      burst(['rise', 'sparks'], f.group.position, '#ff6a1a');
+      number(chest(f).add(V(0, 0.3, 0)), `burn +${ev.burn}`, 'burn');
+    }
+  }
+
+  // The skeletons' turn opens with Burn ticking (mode C): every burning skeleton at once.
+  function burnBeat(ev) {
+    const cues = [{ at: 120, fn: () => {
+      for (const h of ev.hits) {
+        const f = foeFig(h.target);
+        if (!f) continue;
+        shown.enemies[h.target].hp = h.hpLeft;
+        if (h.killed) { shown.enemies[h.target].alive = false; f.play('death'); } else f.play('hit', 1.4);
+        const at = chest(f);
+        number(at, `${h.amount}`, 'burn big-ish');
+        glow(f, '#ff6a1a', 0.3, 160);
+        burst(['pillar', 'sparks'], f.group.position.clone(), '#ff5a1a');
+        info.impacts++;
+      }
+      stop(70);
+      shake(0.08);
+    } }, { at: 520, fn: () => applySnap(ev.snap) }];
+    return { cues, dur: 560 };
   }
 
   // Mode B: a hard cut to this card family's shot (stage.shots), held through the card.
@@ -362,6 +396,7 @@ export function createBattlePlayer({ data, pace, figures, stage, rig, vfx, camer
     info.lastEvent = ev.type;
     if (ev.type === 'card') return cardBeat(ev);
     if (ev.type === 'enemy') return enemyBeat(ev);
+    if (ev.type === 'burn') return burnBeat(ev);
     if (ev.type === 'fightStart') return { dur: 700, cues: [{ at: 0, fn: () => setupFight(ev) }] };
     if (ev.type === 'turnStart') {
       return { dur: pace.turnGapMs, cues: [{ at: 0, fn: () => { applySnap(ev.snap); info.chain = 0; } }, { at: pace.turnGapMs, fn: () => { info.turnKey = `${info.fight}:${ev.turn}`; } }] };

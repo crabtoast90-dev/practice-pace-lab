@@ -105,12 +105,14 @@ export function createKaitosView({ data, seed, figures, stage, rig, vfx, camera,
     $('timer').style.setProperty('--left', (left / ch.pickMs).toFixed(3));
     $('timer').classList.toggle('low', left < ch.pickMs * 0.3);
     $('timer-text').textContent = `Next card: ${(left / 1000).toFixed(1)} s`;
-    const key = [ready, busy, run.phase, run.fightIndex, f.turn, player.info.turnKey, f.hand.map((c) => c.uid), f.played, f.hero.str, target, showReward, showEnd].join('|');
+    const key = [ready, busy, run.phase, run.fightIndex, f.turn, player.info.turnKey, f.hand.map((c) => c.uid), f.played, f.haste, f.hero.str, target, showReward, showEnd].join('|');
     if (key === renderedKey) return;
     renderedKey = key;
     $('fight-label').textContent = `Fight ${run.fightIndex + 1}/${data.fights.length} · Turn ${f.turn}`;
-    $('energy').textContent = `${ready ? f.played : 0}/${ch.limit}`;
-    $('energy').classList.toggle('empty', ready && f.played >= ch.limit);
+    const limit = ch.limit + (f.haste ?? 0);
+    $('energy').textContent = `${ready ? f.played : 0}/${limit}`;
+    $('energy').classList.toggle('empty', ready && f.played >= limit);
+    $('energy').classList.toggle('hasted', ready && (f.haste ?? 0) > 0);
     $('piles').textContent = `Deck ${f.draw.length} · Discard ${f.discard.length}`;
     $('end-turn').disabled = !ready;
     $('end-turn').textContent = ready && f.played > 0 ? 'End combo' : 'End turn';
@@ -173,14 +175,14 @@ export function createKaitosView({ data, seed, figures, stage, rig, vfx, camera,
       const f = run.fight;
       return {
         phase: run.phase, fight: run.fightIndex, turn: f.turn, inputReady: inputReady(), comboOpen: comboOpen(), timeLeft: Math.round(timeLeft()), busy: player.busy(), pending: player.pending(), beats: player.beatsPlayed(),
-        played: f.played, spirits: (f.spirits ?? []).slice(), picks: run.events.filter((e) => e.type === 'card').map((e) => e.pickMs), target, hand: f.hand.map((c) => c.id), reward: run.reward, timeouts,
+        played: f.played, haste: f.haste ?? 0, burns: f.enemies.map((e) => e.burn), spirits: (f.spirits ?? []).slice(), picks: run.events.filter((e) => e.type === 'card').map((e) => e.pickMs), target, hand: f.hand.map((c) => c.id), reward: run.reward, timeouts,
         hp: { hero: player.shown.hero.hp, foes: player.shown.enemies.map((e) => e.hp) }, simHp: { hero: f.hero.hp, foes: f.enemies.map((e) => e.hp) },
         ...player.info, hitStop: player.hitStopping(), result: run.result, digest: digest(run.events),
       };
     },
     stateLine() {
       const s = this.state();
-      return `kaitos: fight ${s.fight + 1} turn ${s.turn}, phase ${s.phase}, ${s.comboOpen ? `combo ${s.played}/${ch.limit} (${s.spirits.join('-')}), ${s.timeLeft} ms left` : s.inputReady ? 'pick the first card' : s.busy ? `playing (${s.pending} beats queued)` : 'waiting'}; hero HP ${s.hp.hero}, skeletons ${s.hp.foes.join('/')}; hand ${s.hand.join(', ') || '-'}; spirit moments ${s.spiritMoments}, combo ends ${s.comboEnds.join(', ') || '-'}${s.result ? `; result ${s.result}` : ''}`;
+      return `kaitos: fight ${s.fight + 1} turn ${s.turn}, phase ${s.phase}, ${s.comboOpen ? `combo ${s.played}/${ch.limit + s.haste} (${s.spirits.join('-')}), ${s.timeLeft} ms left` : s.inputReady ? 'pick the first card' : s.busy ? `playing (${s.pending} beats queued)` : 'waiting'}; hero HP ${s.hp.hero}, skeletons ${s.hp.foes.join('/')}; hand ${s.hand.join(', ') || '-'}; spirit moments ${s.spiritMoments}, combo ends ${s.comboEnds.join(', ') || '-'}${s.result ? `; result ${s.result}` : ''}`;
     },
     dispose() {
       player.dispose();

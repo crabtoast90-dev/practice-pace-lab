@@ -1,12 +1,12 @@
 # Balance report
 
-Written by `npm run sim` on 2026-10-20 08:09 UTC. Do not edit by hand.
+Written by `npm run sim` on 2026-10-20 08:37 UTC. Do not edit by hand.
 
 ## Headline
 
 - A Fast: all targets pass. Wins 62%, fights 4.3 / 4.8 / 6.6 turns.
 - B Plan then Watch: all targets pass. Wins 66%, fights 4.3 / 4.8 / 6.6 turns.
-- C Spirit Combo: misses a target. Wins 100%, fights 2.6 / 2.4 / 3.1 turns.
+- C Spirit Combo: misses a target. Wins 100%, fights 1.9 / 1.9 / 2.4 turns.
 
 Balance is information only for this practice run (see CLAUDE.md).
 
@@ -51,8 +51,12 @@ Shield Bash | block | 1 | 311 | 42 | 153
 Iron Wall | block | 2 | 315 | 43 | 36
 Final Verdict | finisher | 1 | 294 | 216 | 743
 Skyfall | finisher | 2 | 319 | 47 | 25
+Ember Cut | light | 1 | 0 | - | 0
+Wildfire | area | 2 | 0 | - | 0
+Quickstep | light | 0 | 0 | - | 0
+Tempo Rush | buff | 1 | 0 | - | 0
 
-- Never played: Quick Jab.
+- Never played: Quick Jab, Ember Cut, Wildfire, Quickstep, Tempo Rush.
 
 ## Mode: B Plan then Watch
 
@@ -95,15 +99,19 @@ Shield Bash | block | 1 | 158 | 20 | 73
 Iron Wall | block | 2 | 160 | 23 | 16
 Final Verdict | finisher | 1 | 153 | 115 | 389
 Skyfall | finisher | 2 | 165 | 20 | 8
+Ember Cut | light | 1 | 0 | - | 0
+Wildfire | area | 2 | 0 | - | 0
+Quickstep | light | 0 | 0 | - | 0
+Tempo Rush | buff | 1 | 0 | - | 0
 
-- Never played: Quick Jab.
+- Never played: Quick Jab, Ember Cut, Wildfire, Quickstep, Tempo Rush.
 
 ## Mode: C Spirit Combo
 
 300 seeded runs (seeds 1-300), played by the bot (src/core/bot.js).
 
 - Bot run win rate 100% against target 62% (accepting 55-70%): **FAILS** (too easy).
-- Fight length 2.6 / 2.4 / 3.1 turns against target 4-7: **FAILS** (Crypt Gate, Ossuary, Champion of Bone out of range).
+- Fight length 1.9 / 1.9 / 2.4 turns against target 4-7: **FAILS** (Crypt Gate, Ossuary, Champion of Bone out of range).
 - Winning runs end with 67 of 72 HP on average.
 - Same seed, same run: yes (seed 1 played twice gives identical events).
 
@@ -111,40 +119,44 @@ Skyfall | finisher | 2 | 165 | 20 | 8
 
 fight | reached | won | turns (avg, shortest-longest) | HP lost (avg)
 --- | --- | --- | --- | ---
-Crypt Gate | 300 | 100% | 2.6 (2-4) | 0.4
-Ossuary | 300 | 100% | 2.4 (1-4) | 0.5
-Champion of Bone (elite) | 300 | 100% | 3.1 (2-5) | 4.2
+Crypt Gate | 300 | 100% | 1.9 (1-3) | 1.0
+Ossuary | 300 | 100% | 1.9 (1-3) | 1.0
+Champion of Bone (elite) | 300 | 100% | 2.4 (1-3) | 3.5
 
 ### Combo moments
 
-- Turns where the bot plays 3+ cards (the combo moment): 81% of 2715 turns.
-- Cards per turn: 4.0 on average; 1: 4%, 2: 4%, 3: 4%, 4: 8%, 5+: 69%.
+- Turns where the bot plays 3+ cards (the combo moment): 82% of 2198 turns.
+- Cards per turn: 5.6 on average; 1: 2%, 2: 2%, 3: 4%, 4: 4%, 5+: 74%.
 
 ### Does every card get used?
 
 card | family | cost | offered | picked | played (all runs)
 --- | --- | --- | --- | --- | ---
-Strike | light | 1 | starter | - | 5676
-Quick Jab | light | 0 | 135 | - | 0
-Twin Slash | light | 1 | 177 | 86 | 190
-Heavy Blow | heavy | 2 | 145 | 145 | 285
-Crushing Chop | heavy | 2 | starter | - | 1190
-Sunder | heavy | 1 | 131 | - | 0
-Sweep | area | 1 | 161 | 25 | 51
-Whirlwind | area | 2 | 153 | 117 | 230
-Battle Cry | buff | 1 | 146 | 59 | 125
-Focus | buff | 0 | 146 | - | 0
-Guard | block | 1 | starter | - | 2836
-Shield Bash | block | 1 | 138 | 14 | 33
-Iron Wall | block | 2 | 156 | 30 | 65
-Final Verdict | finisher | 1 | 143 | 107 | 182
-Skyfall | finisher | 2 | 169 | 17 | 28
+Strike | light | 1 | starter | - | 4377
+Quick Jab | light | 0 | 106 | - | 0
+Twin Slash | light | 1 | 105 | 54 | 50
+Heavy Blow | heavy | 2 | 102 | 102 | 124
+Crushing Chop | heavy | 2 | starter | - | 1294
+Sunder | heavy | 1 | 118 | 3 | 3
+Sweep | area | 1 | 128 | 23 | 18
+Whirlwind | area | 2 | 118 | 96 | 118
+Battle Cry | buff | 1 | 100 | 45 | 50
+Focus | buff | 0 | 112 | 4 | 3
+Guard | block | 1 | starter | - | 1954
+Shield Bash | block | 1 | 110 | 26 | 33
+Iron Wall | block | 2 | 128 | 24 | 15
+Final Verdict | finisher | 1 | 116 | 98 | 110
+Skyfall | finisher | 2 | 94 | 18 | 26
+Ember Cut | light | 1 | 125 | 25 | 889
+Wildfire | area | 2 | 116 | 63 | 776
+Quickstep | light | 0 | 106 | 1 | 1254
+Tempo Rush | buff | 1 | 116 | 18 | 1276
 
-- Never played: Quick Jab, Sunder, Focus.
+- Never played: Quick Jab.
 
 ### Combos and spirit numbers
 
 Bot picks each card 900 ms after the last; the timer is 5000 ms.
 
-- How combos end (1515): limit 87%, finisher 9%, stop 4%. The timer ended 0% of combos.
-- Spirit bonuses: 7% of cards made a pair, 13% a straight.
+- How combos end (1056): limit 94%, finisher 6%, stop 0%. The timer ended 0% of combos.
+- Spirit bonuses: 15% of cards made a pair, 13% a straight.
