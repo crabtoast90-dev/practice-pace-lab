@@ -1,5 +1,7 @@
 # Plan
 
+**Status: done (2026-10-21).** The question is answered (see DECISIONS.md, 2026-10-21). Open tuning items below stay as notes for a future game, not work.
+
 Each item can be pasted alone into a fresh session. Every session reads `CLAUDE.md` first, follows the merge rule, adds steps to `npm run check` for what it builds, and reruns `npm run sim` if it touches a sim or a data file.
 
 **Lanes:** items in different lanes can run at the same time. Inside a lane, items run in order. "After X" means wait until X is merged.
@@ -32,5 +34,5 @@ Each item can be pasted alone into a fresh session. Every session reads `CLAUDE.
 
 ## Ship
 - [x] **E1. Compare the three modes.** Skipped: Brian had his takeaways (see DECISIONS.md, 2026-10-21: C excites him most; B is the visual / cinematic bet; A is a standard deckbuilder). After B1 and C1. One session where Brian plays all three back to back; scores per mode in `LOG.md`; the verdict on "which turn structure feels best" goes in `DECISIONS.md`.
-- [ ] **E2. Release.** Last. Live-site check, README and CREDITS complete, unused models removed from `public/`, final `npm run sim`.
+- [x] **E2. Release.** Closed 2026-10-21: Brian called the project done; the last full check passed on the live site (all three modes, laptop and phone). Last. Live-site check, README and CREDITS complete, unused models removed from `public/`, final `npm run sim`.
   *Done when:* the live-site check passes and its screenshots are described in one line each.

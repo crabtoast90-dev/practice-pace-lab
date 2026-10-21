@@ -67,3 +67,4 @@ Which turn structure feels best? No back-to-back comparison session needed (E1 s
 - **A Fast:** fine, but not something we can leverage or make a big difference on with our tools; similar to many other roguelike deckbuilders. A plain good deckbuilder could still stand out on Unreal Engine-level graphics alone.
 - **B Plan then Watch:** has potential. The Balatro reference applies, and it lets us maximize cinematics and visuals: if we have real confidence in our visual representation, B sells it best, and he can do good stuff with the gameplay.
 - **C Spirit Combo:** highest upside and highest risk. The biggest gameplay departure, more intense and less laid back than most card games; could turn some people off, but could be a big win if executed well, as Clair Obscur was for turn-based RPGs, with Baten Kaitos as a known good example. A game he liked, a structure never done in a roguelike: **C excites him the most.**
+- 2026-10-21: Brian: the project is done.

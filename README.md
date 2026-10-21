@@ -4,6 +4,8 @@
 
 A short Slay the Spire-style run (one knight, three crypt fights, fifteen cards) that tests one question: for a deckbuilder where every card is a combat animation, which turn structure feels best? Three pace modes share the cards and skeletons: A Fast, B Plan then Watch, C Spirit Combo (Baten Kaitos-style).
 
+**Outcome (2026-10-21):** C (Spirit Combo) has the highest upside and excited Brian most; B (Plan then Watch) is the bet if the cinematics and visuals are strong; A plays like most roguelike deckbuilders. Details in `DECISIONS.md`.
+
 How it was built and why: `PLAN.md` (what shipped), `DECISIONS.md` (every call), `BALANCE.md` (the sim's report), `LOG.md` (sessions, time and scores).
 
 ## For developers
