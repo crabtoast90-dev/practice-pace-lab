@@ -61,3 +61,9 @@ One dated line per decision. Lines marked *(my call)* are technical or naming ca
 - 2026-10-20: With draw-on-play, when the draw pile runs out mid-combo the discard (cards just played) reshuffles in, as at the start of a turn. *(my call)*
 - 2026-10-21: Brian's ideas for C: Slay the Spire-style relics keyed to C's events (on draw, your Burns...), and Finishers earned by recipes (a combo or condition grants the Finisher card; Finishers also draftable). Logged in IDEAS.md; not built.
 - 2026-10-21: Brian's C verdict (latest version, fun 3.5, look 2.8): "Definitely has some potential." Still a little too fast; block still out of place; Haste and Burn need smoothing. The biggest open question: are there defensive / slower builds that fit this loop, and if not, is there enough strategy in card sequencing (he thinks deckbuilding could supply it)?
+
+## 2026-10-21: the answer (Brian)
+Which turn structure feels best? No back-to-back comparison session needed (E1 skipped); his takeaways:
+- **A Fast:** fine, but not something we can leverage or make a big difference on with our tools; similar to many other roguelike deckbuilders. A plain good deckbuilder could still stand out on Unreal Engine-level graphics alone.
+- **B Plan then Watch:** has potential. The Balatro reference applies, and it lets us maximize cinematics and visuals: if we have real confidence in our visual representation, B sells it best, and he can do good stuff with the gameplay.
+- **C Spirit Combo:** highest upside and highest risk. The biggest gameplay departure, more intense and less laid back than most card games; could turn some people off, but could be a big win if executed well, as Clair Obscur was for turn-based RPGs, with Baten Kaitos as a known good example. A game he liked, a structure never done in a roguelike: **C excites him the most.**

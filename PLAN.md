@@ -31,6 +31,6 @@ Each item can be pasted alone into a fresh session. Every session reads `CLAUDE.
 - [ ] **T2. Tune B and C** (C notes 2026-10-21: still a little too fast; block out of place; Haste and Burn need smoothing) the same way, after B1 / C1 and their playtests.
 
 ## Ship
-- [ ] **E1. Compare the three modes.** After B1 and C1. One session where Brian plays all three back to back; scores per mode in `LOG.md`; the verdict on "which turn structure feels best" goes in `DECISIONS.md`.
+- [x] **E1. Compare the three modes.** Skipped: Brian had his takeaways (see DECISIONS.md, 2026-10-21: C excites him most; B is the visual / cinematic bet; A is a standard deckbuilder). After B1 and C1. One session where Brian plays all three back to back; scores per mode in `LOG.md`; the verdict on "which turn structure feels best" goes in `DECISIONS.md`.
 - [ ] **E2. Release.** Last. Live-site check, README and CREDITS complete, unused models removed from `public/`, final `npm run sim`.
   *Done when:* the live-site check passes and its screenshots are described in one line each.
